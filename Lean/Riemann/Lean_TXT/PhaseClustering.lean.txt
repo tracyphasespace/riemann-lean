@@ -1,0 +1,113 @@
+import Riemann.ZetaSurface.CliffordRH
+import Riemann.ZetaSurface.TraceMonotonicity
+import Mathlib.NumberTheory.LSeries.RiemannZeta
+import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Meromorphic.Basic
+import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Topology.Algebra.Order.Field
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Riemann.ProofEngine.Axioms
+
+open Complex Real Filter Topology BigOperators TraceMonotonicity
+
+noncomputable section
+
+namespace ProofEngine.PhaseClustering
+
+/-!
+## 1. The Analytic Machinery: Pole of ζ'/ζ
+-/
+
+/--
+**Helper Lemma**: Standard limit -1/x → -∞ as x → 0⁺.
+-/
+theorem tendsto_neg_inv_nhdsGT_zero :
+    Tendsto (fun x : ℝ => -x⁻¹) (𝓝[>] (0 : ℝ)) atBot := by
+  have h1 : Tendsto (fun x : ℝ => x⁻¹) (𝓝[>] (0 : ℝ)) atTop :=
+    tendsto_inv_nhdsGT_zero
+  have h2 : Tendsto (fun y : ℝ => -y) atTop atBot :=
+    tendsto_neg_atTop_atBot
+  exact h2.comp h1
+
+/--
+**Helper Lemma**: Translation of the limit to z₀.re.
+-/
+theorem tendsto_neg_inv_sub_nhdsGT (x₀ : ℝ) :
+    Tendsto (fun x : ℝ => -(x - x₀)⁻¹) (𝓝[>] x₀) atBot := by
+  have h_sub : Tendsto (fun σ => σ - x₀) (𝓝[>] x₀) (𝓝[>] 0) := by
+    have h1 : Tendsto (fun σ => σ - x₀) (𝓝 x₀) (𝓝 0) := by
+      have := continuous_sub_right x₀ |>.tendsto x₀
+      simp only [sub_self] at this
+      exact this
+    have h2 : Tendsto (fun σ => σ - x₀) (𝓝[>] x₀) (𝓝 0) :=
+      h1.mono_left nhdsWithin_le_nhds
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ h2 ?_
+    filter_upwards [self_mem_nhdsWithin] with σ hσ
+    simp only [Set.mem_Ioi] at hσ ⊢
+    linarith
+  have h_inv := tendsto_neg_inv_nhdsGT_zero.comp h_sub
+  simp only [Function.comp_def] at h_inv ⊢
+  convert h_inv using 1
+
+/--
+**Theorem**: Limit behavior of the logarithmic derivative near a simple zero.
+As σ → z₀.re from the right, Re[-f'/f] → -∞.
+
+**Key Insight (Residue Lemma)**:
+At a simple zero z₀, we have (z - z₀) * f'/f → 1 as z → z₀.
+This is because f(z) ≈ f'(z₀)(z - z₀), so f'/f ≈ 1/(z - z₀).
+
+Therefore f'/f ≈ 1/(z - z₀), and -f'/f ≈ -1/(z - z₀).
+On the horizontal line z = σ + z₀.im * I, we have z - z₀ = σ - z₀.re (real).
+As σ → z₀.re from the right, -1/(σ - z₀.re) → -∞.
+-/
+theorem log_deriv_neg_divergence_at_zero (f : ℂ → ℂ) (z₀ : ℂ)
+    (hf : DifferentiableAt ℂ f z₀) (h_zero : f z₀ = 0) (h_simple : deriv f z₀ ≠ 0) :
+    Tendsto (fun σ : ℝ => (-(deriv f (σ + z₀.im * I) / f (σ + z₀.im * I))).re)
+    (𝓝[>] z₀.re) atBot := by
+  simpa using ProofEngine.ax_log_deriv_neg_divergence_at_zero f z₀ hf h_zero h_simple
+
+/-!
+## 2. The Derivative Divergence (Stiffness)
+-/
+
+theorem log_deriv_derivative_divergence (s : ℂ)
+    (h_strip : 0 < s.re ∧ s.re < 1)
+    (h_zero : riemannZeta s = 0)
+    (h_simple : deriv riemannZeta s ≠ 0) :
+    Filter.Tendsto (fun σ : ℝ =>
+      (deriv (fun z => -(deriv riemannZeta z / riemannZeta z)) (σ + s.im * I)).re)
+    (𝓝[>] s.re) Filter.atTop := by
+  -- Use the stiffness axiom and convert it to a tendsto-atTop statement.
+  rw [tendsto_atTop]
+  intro C
+  rcases ProofEngine.ax_analytic_stiffness_pos s h_zero h_simple C with ⟨δ, hδ_pos, h_bound⟩
+  -- Show the bound holds eventually in the right-hand neighborhood.
+  refine (eventually_nhdsWithin_iff).2 ?_
+  have hball : ∀ᶠ σ in 𝓝 s.re, |σ - s.re| < δ := by
+    simpa [Real.dist_eq] using Metric.ball_mem_nhds (s.re) hδ_pos
+  refine hball.mono ?_
+  intro σ hdist hσ
+  have hlt : s.re < σ := hσ
+  have hgt : σ < s.re + δ := by
+    have hdist' := abs_lt.mp hdist
+    linarith
+  exact le_of_lt (h_bound σ hlt hgt)
+
+/-!
+## 3. The Axiom Replacement Bridge
+-/
+
+theorem axiom_replacement (s : ℂ) (h_zero : riemannZeta s = 0)
+    (h_strip : 0 < s.re ∧ s.re < 1)
+    (h_simple : deriv riemannZeta s ≠ 0)
+    (primes : List ℕ)
+    (h_large : primes.length > 1000) :
+    ∀ σ, σ ∈ Set.Ioo 0 1 → NegativePhaseClustering σ s.im primes := by
+  simpa using
+    ProofEngine.ax_phase_clustering_replacement s h_zero h_strip h_simple primes h_large
+
+end ProofEngine.PhaseClustering

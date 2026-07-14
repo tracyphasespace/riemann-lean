@@ -1,0 +1,139 @@
+import Mathlib.Tactic
+import Axioms
+
+/-!
+# CollatzBridge: Standard ↔ Compressed Collatz
+
+This module proves the relationship between standard collatz and compressed T,
+allowing us to eliminate the bridge axioms.
+
+## Key Insight
+
+- Standard collatz: even → n/2, odd → 3n+1
+- Compressed T: even → n/2, odd → (3n+1)/2
+
+For odd n, T(n) = collatz(collatz(n)), so T "advances faster".
+If standard collatz descends, compressed T must also descend.
+-/
+
+namespace CollatzBridge
+
+open Axioms
+
+/-!
+## Part 1: Basic Relationships
+-/
+
+-- T and collatz agree on even inputs
+lemma T_eq_collatz_even (n : ℕ) (heven : n % 2 = 0) : T n = collatz n := by
+  simp only [T, collatz, heven, ↓reduceIte]
+
+-- For odd n, T(n) = collatz(collatz(n))
+lemma T_eq_collatz_collatz_odd (n : ℕ) (hodd : n % 2 = 1) : T n = collatz (collatz n) := by
+  simp only [T, collatz]
+  have h : ¬(n % 2 = 0) := by omega
+  simp only [h, ↓reduceIte]
+  -- collatz n = 3n+1, which is even, so collatz(collatz n) = (3n+1)/2
+  have heven : (3 * n + 1) % 2 = 0 := by omega
+  simp only [heven, ↓reduceIte]
+
+-- collatz output on odd input is always even
+lemma collatz_odd_is_even (n : ℕ) (hodd : n % 2 = 1) : (collatz n) % 2 = 0 := by
+  simp only [collatz]
+  have h : ¬(n % 2 = 0) := by omega
+  simp only [h, ↓reduceIte]
+  omega
+
+/-!
+## Part 2: Trajectory Relationships
+
+We show that the T trajectory is "ahead" of the collatz trajectory.
+-/
+
+-- Define trajectory using T (matching MersenneProofs)
+def trajectoryT (n : ℕ) : ℕ → ℕ
+  | 0 => n
+  | k + 1 => T (trajectoryT n k)
+
+-- The key lemma: if collatz trajectory visits m < n, so does T trajectory
+-- Actually, we prove: trajectoryDescends implies drops using T
+
+/-!
+## Part 3: Descent Transfer
+
+The bridge theorem: if standard collatz descends, drops holds.
+-/
+
+-- First, unpack what trajectoryDescends means
+lemma trajectoryDescends_means (n k : ℕ) :
+    trajectoryDescends n k = true ↔
+    ∃ j, j < k ∧ 0 < trajectory n (j + 1) ∧ trajectory n (j + 1) < n := by
+  -- This requires understanding the go function
+  -- For now, we'll prove specific cases
+  sorry -- Complex recursion analysis needed
+
+-- Alternative: direct proof that trajectoryDescends implies a witness exists
+lemma trajectoryDescends_witness (n k : ℕ) (h : trajectoryDescends n k = true) :
+    ∃ j ≤ k, 0 < trajectory n j ∧ trajectory n j < n := by
+  -- The go function checks each step
+  -- If it returns true, it found such a j
+  sorry -- Requires go function analysis
+
+-- Bridge: standard trajectory descent implies T trajectory descent
+-- Key insight: at each step, T is at least as far as collatz
+
+-- For a more direct approach, show that if trajectory n j < n,
+-- then trajectoryT n j' < n for some j' ≤ j
+
+lemma trajectory_le_trajectoryT (n : ℕ) (k : ℕ) :
+    ∃ j ≤ k, trajectoryT n j ≤ trajectory n k := by
+  -- T advances at least as fast as collatz
+  induction k with
+  | zero =>
+    use 0
+    simp [trajectory, trajectoryT]
+  | succ k ih =>
+    obtain ⟨j, hj, hle⟩ := ih
+    by_cases heven : (trajectory n k) % 2 = 0
+    · -- Both T and collatz halve
+      use j + 1, by omega
+      simp only [trajectory, trajectoryT]
+      calc trajectoryT n (j + 1) = T (trajectoryT n j) := rfl
+        _ ≤ T (trajectory n k) := by
+          -- T is monotonic? Not quite...
+          sorry
+        _ = collatz (trajectory n k) := T_eq_collatz_even _ heven
+        _ = trajectory n (k + 1) := rfl
+    · -- trajectory n k is odd
+      -- collatz goes to 3m+1, T goes to (3m+1)/2
+      -- T is ahead by one step
+      sorry
+
+/-!
+## Part 4: The Main Bridge Theorem (To Be Completed)
+
+The full proof requires careful analysis of the trajectory functions.
+For now, we document the approach and note the remaining work.
+-/
+
+-- The target theorem we want to prove:
+-- theorem standard_descends_implies_drops (n : ℕ) (hn : 1 < n)
+--     (hdesc : ∃ k, Axioms.trajectoryDescends n k = true) :
+--     ∃ k, 0 < trajectoryT n k ∧ trajectoryT n k < n := ...
+
+/-
+BLOCKER: The proof requires showing:
+1. trajectoryDescends = true implies a concrete witness j with trajectory n j < n
+2. If trajectory n j < n, then trajectoryT n j' < n for some j' ≤ j
+
+Both require careful analysis of the recursive go function and the
+relationship between the two trajectory functions.
+
+The mathematical content is clear:
+- T advances at least as fast as collatz
+- If collatz finds a descent, T finds it too (possibly faster)
+
+But formalizing this in Lean requires handling the recursion carefully.
+-/
+
+end CollatzBridge

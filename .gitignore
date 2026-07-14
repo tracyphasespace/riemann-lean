@@ -4,7 +4,7 @@ Lean/.elan/
 *.olean
 *.ilean
 *.trace
-lake-manifest.json
+# lake-manifest.json  <- must be TRACKED (it is the mathlib pin)
 
 # Python
 __pycache__/
@@ -29,4 +29,7 @@ node_modules/
 *.tmp
 *.bak
 Collatz_Conjecture/Lean/.lake/
-Collatz_Conjecture/Lean/lake-manifest.json
+# Collatz_Conjecture/Lean/lake-manifest.json  <- must be TRACKED (mathlib pin)
+
+# Lean build artifacts (any depth)
+**/.lake/

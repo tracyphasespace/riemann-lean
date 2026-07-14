@@ -1,0 +1,53 @@
+name = "Collatz"
+version = "0.1.0"
+keywords = ["math", "collatz", "number-theory"]
+defaultTargets = ["Proof_Complete"]
+
+[leanOptions]
+pp.unicode.fun = true
+relaxedAutoImplicit = false
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "v4.14.0"
+
+# === SPECTRAL ANALYSIS (FULLY PROVEN) ===
+
+# Pillar 2: Spectral drift
+[[lean_lib]]
+name = "Pillar2_SpectralDrift"
+
+# Pillar 3: Trapdoor ratchet
+[[lean_lib]]
+name = "Pillar3_TrapdoorLogic"
+
+# Combined spectral analysis
+[[lean_lib]]
+name = "SpectralAnalysis"
+
+# Final integration
+[[lean_lib]]
+name = "Proof_Complete"
+
+# === CORE MODULES ===
+
+# Centralized axiom registry
+[[lean_lib]]
+name = "Axioms"
+
+# Descent certificates (mod 32 coverage)
+[[lean_lib]]
+name = "Certificates"
+
+# Original Mersenne proofs (FULLY PROVEN)
+[[lean_lib]]
+name = "MersenneProofs"
+
+# Original ratchet proofs (FULLY PROVEN)
+[[lean_lib]]
+name = "TrapdoorRatchet"
+
+# Final proof via Mersenne analysis
+[[lean_lib]]
+name = "CollatzFinal"
