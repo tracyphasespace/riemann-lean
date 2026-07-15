@@ -1,6 +1,13 @@
 /-
+ARCHIVED 2026-07-14 (moved from Riemann/sandbox/). Never built or imported.
 SANDBOX FILE — DO NOT IMPORT INTO THE PROJECT.
 All content here is for proposal only.
+
+This is a registry of 10 PROPOSED (undischarged) axioms for the RH effort. It
+proves nothing; several axioms (e.g. `ax_norm_strict_min_at_half`,
+`ax_zero_implies_norm_min`) essentially assume the crux of RH. Kept for the
+axiom-discharge roadmap, not as a result. See ZetaSurface/CliffordRH.lean and
+TraceMonotonicity.lean for the live modules it referenced.
 -/
 
 /-
