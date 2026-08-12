@@ -1,3 +1,18 @@
+# Riemann — start here
+
+**Reviewers and external readers:** the entry point is
+[`Papers/Critical_Line_Ledger_Aug2026.md`](Papers/Critical_Line_Ledger_Aug2026.md) —
+a claims-typed ledger (proven-classical / proven-recent / proven-here / reframing / open,
+with exactly one open row) for the critical-line problem, anchored to the Aug 2026
+two-thirds theorem ([Z23], Anthropic) and to 26 machine-checked Lean 4 theorems in
+[`Zeta23Bridge/`](Zeta23Bridge/) (verification: `lake update && lake exe cache get && lake build`;
+expected axiom audit is the ledger's Appendix A). The program-internal development record is
+[`Papers/CliffordNN_TwoThirds_Aug2026.md`](Papers/CliffordNN_TwoThirds_Aug2026.md).
+Historical papers and conditional reductions are in `Papers/` and `Lean/`; their scope
+statements govern (no unconditional proof of RH is claimed anywhere in this repository).
+
+---
+
 # Riemann Experiments
 
 This repo contains exploratory scripts and visualizations for McSheery-style prime field experiments.

@@ -26,6 +26,8 @@ This is the largest single improvement in the history of the critical-line propo
 
 **[Z23] proves that at least two thirds of the directions of a certain prime-built real quadratic space are positive struts, by showing that the hyperbolic planes — one per off-line zero pair, each carrying an outward bivector with $B^2 = +1$ — are too expensive to fill more than a third of it.**
 
+*(Attribution, added in the ledger-v1.2 revision: the signature-(1,1) contribution of each off-line pair and the rank–trace route are stated in [Z23]'s own abstract; Bombieri (2000) used the negative index of the same truncations. This paper's dictionary claims the Witt/Clifford identification and its formalization, not the mechanism.)*
+
 The single most important structural fact, and the reversal the Sieve program must absorb:
 
 > **In the working proof, the orthogonal hyperbolic planes belong to the *off-line zero pairs*, not to the primes. The primes do not span dimensions; they pay for the metric.**

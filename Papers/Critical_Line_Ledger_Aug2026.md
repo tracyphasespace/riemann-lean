@@ -1,6 +1,6 @@
 # A Formal Ledger for the Critical-Line Problem
 
-**Tracy McSheery, with Claude (Anthropic) — August 12, 2026 (ledger v1.1, revised same day after external review; see §10)**
+**Tracy McSheery, with Claude (Anthropic) — August 12, 2026 (ledger v1.2; revision history in §10)**
 
 *This document is written for skeptical readers. Every claim is typed as **proven-classical**, **proven-recent**, **proven-here** (machine-checked, reproducible), **reframing** (no new content claimed), or **heuristic**. Nothing requires trusting the authors; the checked items are checkable by the Lean kernel on your machine.*
 
@@ -29,11 +29,7 @@ lake exe cache get     # Mathlib olean cache
 lake build             # compiles both files
 ```
 
-Expected output: no errors, no `sorry`, and each of the 26 audited theorems reporting exactly
-
-```
-'<name>' depends on axioms: [propext, Classical.choice, Quot.sound]
-```
+Expected output: no errors, no `sorry`, and each of the 26 audited theorems reporting a subset of Lean's three standard axioms `[propext, Classical.choice, Quot.sound]` — the verbatim output is Appendix A (one theorem, `Sponge.orthogonality`, uses only two of the three; the rest use all three; none uses `sorryAx` or any custom axiom).
 
 [Z23]'s own repository carries an independent comparator-style audit of the two-thirds theorem itself.
 
@@ -122,4 +118,39 @@ External readers may encounter the program-internal vocabulary in the companion 
 
 ## 10. Provenance and versioning
 
-The two-thirds theorem and its Lean formalization are [Z23]'s (Anthropic, Aug 2026). Classical components are owned as attributed. The Lean artifacts here were produced in an interactive session (McSheery/Claude, Aug 12, 2026); ledger v1.0 was drafted the same day and revised to v1.1 after three independent external reviews, whose accepted findings included: the §3 attribution of the (1,1) mechanism to [Z23]'s abstract; the demotion of "isolating exactly" to "candidate abstraction" in §2; the separation of classical RH-equivalents from framework translations in §0; the Row 8 rewording; the §5 firewall box; the removal of a heuristic archimedean remark to the companion paper; and this versioning section. The companion paper records the program-internal development. Repository tag for this revision: `ledger-v1`.
+The two-thirds theorem and its Lean formalization are [Z23]'s (Anthropic, Aug 2026). Classical components are owned as attributed. The Lean artifacts here were produced in an interactive session (McSheery/Claude, Aug 12, 2026); ledger v1.0 was drafted the same day and revised to v1.1 after three independent external reviews, whose accepted findings included: the §3 attribution of the (1,1) mechanism to [Z23]'s abstract; the demotion of "isolating exactly" to "candidate abstraction" in §2; the separation of classical RH-equivalents from framework translations in §0; the Row 8 rewording; the §5 firewall box; the removal of a heuristic archimedean remark to the companion paper; and this versioning section. The companion paper records the program-internal development. Repository tag for this revision: `ledger-v1`. v1.2 (same day) adds the verbatim audit appendix, corrects “each reporting exactly” to the observed subset behavior, and adds the repository-root reviewer routing.
+
+---
+
+## Appendix A. Verbatim axiom audit (26 theorems)
+
+Output of `lake env lean` on `Zeta23Bridge.lean` and `SpongeStage.lean`, toolchain `leanprover/lean4:v4.33.0-rc2`, against `zeta-23-lean` v1.0 / Mathlib `51e6992e`:
+
+```
+'Zeta23Bridge.bivector_commute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.bivector_sq_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.posIndex_hypBlock' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.negIndex_hypBlock' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.strut_hyperbolic_shadow_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.eulerStiffness_vonMangoldt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.logDeriv6_eq_defect' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.dh_logDeriv6_pos' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.dh_not_eulerStiffness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.zeta_logDerivAt6' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Sponge.orthogonality' depends on axioms: [propext, Quot.sound]
+'Sponge.descent_count' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Sponge.haar_projector' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Sponge.density_shadow' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Sponge.volume_shadow' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Sponge.parity_projector' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage2.descent_by_two' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage2.half_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage2.log_linearizes' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage2.sieve_times_tower' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.collapse_reconstruct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.cascade_limit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.rotor_haar_annihilate' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.log_independence' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.fair_split' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.product_formula' depends on axioms: [propext, Classical.choice, Quot.sound]
+```
