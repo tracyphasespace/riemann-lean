@@ -830,7 +830,198 @@ theorem geom_tail_le {r : ℝ} (h0 : 0 ≤ r) (h1 : r < 1) (K : ℕ) :
     ring
   rw [heq, div_le_div_iff_of_pos_right h1r]
   linarith
+/-! ### F3b-instance, arithmetic core: the bad-prime energy bound and the
+abstract Euler-factor-deletion theorem
+
+`prime_tower_energy`: each prime's stratum carries energy at most
+log²p/(p−1) — the tower reindexes to a geometric tail (`geom_tail_le`).
+`bad_prime_energy`: the union bound over a finite prime set.
+`euler_factor_deletion`: ζ masked at finitely many primes and twisted by
+any unimodular selector inhabits the modulus interface — the abstract
+form of the Dirichlet instance; the named-character corollary is the
+remaining Mathlib plumbing. Interfaces frozen throughout, per the
+registered constraint. -/
+
+open ArithmeticFunction in
+/-- Per-prime tower energy: Σ_{n ≤ N, p ∣ n} Λ(n)²/n ≤ log²p/(p−1). -/
+theorem prime_tower_energy {p : ℕ} (hp : p.Prime) (N : ℕ) :
+    ∑ n ∈ (Ioc 0 N).filter (fun n => p ∣ n), vonMangoldt n ^ 2 / n
+      ≤ Real.log p ^ 2 / ((p : ℝ) - 1) := by
+  classical
+  have hp1 : 1 < p := hp.one_lt
+  have hpR : (1 : ℝ) < p := by exact_mod_cast hp1
+  set S := (Ioc 0 N).filter (fun n => p ∣ n ∧ vonMangoldt n ≠ 0) with hS
+  have hSsub : S ⊆ (Ioc 0 N).filter (fun n => p ∣ n) := by
+    intro n hn
+    simp only [hS, Finset.mem_filter] at hn ⊢
+    exact ⟨hn.1, hn.2.1⟩
+  have hzero : ∀ n ∈ (Ioc 0 N).filter (fun n => p ∣ n), n ∉ S →
+      vonMangoldt n ^ 2 / n = 0 := by
+    intro n hn hns
+    simp only [hS, Finset.mem_filter] at hn hns
+    have : vonMangoldt n = 0 := by
+      by_contra h
+      exact hns ⟨hn.1, hn.2, h⟩
+    rw [this]
+    simp
+  rw [← Finset.sum_subset hSsub hzero]
+  -- on S, n is a power of p with exponent e n ≥ 1
+  have hstruct : ∀ n ∈ S, n = p ^ (n.factorization p)
+      ∧ 1 ≤ n.factorization p := by
+    intro n hn
+    simp only [hS, Finset.mem_filter] at hn
+    obtain ⟨hnI, hpn, hΛ⟩ := hn
+    obtain ⟨q, k, hq, hk, hqk⟩ :=
+      (not_not.mp (fun h => hΛ (vonMangoldt_eq_zero_iff.mpr h)))
+    have hq' : q.Prime := Nat.prime_iff.mpr hq
+    have hpq : p = q := by
+      have : p ∣ q ^ k := hqk ▸ hpn
+      exact (Nat.prime_dvd_prime_iff_eq hp hq').mp (hp.dvd_of_dvd_pow this)
+    subst hpq
+    have hfact : n.factorization p = k := by
+      rw [← hqk, hp.factorization_pow, Finsupp.single_eq_same]
+    constructor
+    · rw [hfact, ← hqk]
+    · rw [hfact]
+      omega
+  set e : ℕ → ℕ := fun n => n.factorization p with he
+  have hval : ∀ n ∈ S, vonMangoldt n ^ 2 / n
+      = Real.log p ^ 2 * (1 / (p : ℝ)) ^ e n := by
+    intro n hn
+    simp only [he]
+    obtain ⟨hn_eq, hn_ge⟩ := hstruct n hn
+    have hΛn : vonMangoldt n = Real.log p := by
+      conv_lhs => rw [hn_eq]
+      rw [vonMangoldt_apply_pow (by omega : n.factorization p ≠ 0),
+        vonMangoldt_apply_prime hp]
+    have hcast : (n : ℝ) = (p : ℝ) ^ n.factorization p := by
+      conv_lhs => rw [hn_eq]
+      push_cast
+      ring
+    rw [hΛn, hcast, one_div, inv_pow, div_eq_mul_inv]
+  rw [Finset.sum_congr rfl hval, ← Finset.mul_sum]
+  have hinj : ∀ x ∈ S, ∀ y ∈ S, e x = e y → x = y := by
+    intro x hx y hy hxy
+    obtain ⟨hx_eq, _⟩ := hstruct x hx
+    obtain ⟨hy_eq, _⟩ := hstruct y hy
+    simp only [he] at hxy
+    rw [hx_eq, hy_eq, hxy]
+  have himg : S.image e ⊆ Icc 1 N := by
+    intro k hk
+    obtain ⟨n, hn, rfl⟩ := Finset.mem_image.mp hk
+    obtain ⟨hn_eq, hn_ge⟩ := hstruct n hn
+    simp only [hS, Finset.mem_filter, Finset.mem_Ioc] at hn
+    refine Finset.mem_Icc.mpr ⟨hn_ge, le_of_lt ?_⟩
+    calc e n < p ^ e n := Nat.lt_pow_self hp1
+      _ = n := hn_eq.symm
+      _ ≤ N := hn.1.2
+  have hgeom : ∑ n ∈ S, (1 / (p : ℝ)) ^ e n
+      ≤ (1 / (p : ℝ)) / (1 - 1 / p) := by
+    rw [← Finset.sum_image hinj]
+    refine le_trans (Finset.sum_le_sum_of_subset_of_nonneg himg ?_) ?_
+    · intro k _ _
+      positivity
+    · exact geom_tail_le (by positivity) (by
+        rw [div_lt_one (by positivity)]
+        exact hpR) N
+  have halg : (1 / (p : ℝ)) / (1 - 1 / p) = 1 / ((p : ℝ) - 1) := by
+    have hp0 : (0 : ℝ) < p := lt_trans one_pos hpR
+    have hpm1 : (0 : ℝ) < (p : ℝ) - 1 := by linarith
+    rw [eq_div_iff hpm1.ne', div_mul_eq_mul_div, div_eq_iff]
+    · ring_nf
+      field_simp
+    · intro h0
+      have : (1 : ℝ) - 1 / p = 0 := h0
+      have : (1 : ℝ) / p = 1 := by linarith
+      have : (p : ℝ) = 1 := by
+        field_simp at this
+        linarith
+      linarith
+  calc Real.log p ^ 2 * ∑ n ∈ S, (1 / (p : ℝ)) ^ e n
+      ≤ Real.log p ^ 2 * ((1 / (p : ℝ)) / (1 - 1 / p)) := by
+        apply mul_le_mul_of_nonneg_left hgeom (sq_nonneg _)
+    _ = Real.log p ^ 2 / ((p : ℝ) - 1) := by
+        rw [halg]
+        ring
+
+open ArithmeticFunction in
+/-- The bad-prime energy bound: the union over a finite prime set. -/
+theorem bad_prime_energy (Q : Finset ℕ) (hQ : ∀ p ∈ Q, p.Prime) (N : ℕ) :
+    ∑ n ∈ (Ioc 0 N).filter (fun n => ∃ p ∈ Q, p ∣ n), vonMangoldt n ^ 2 / n
+      ≤ ∑ p ∈ Q, Real.log p ^ 2 / ((p : ℝ) - 1) := by
+  classical
+  induction Q using Finset.cons_induction with
+  | empty => simp
+  | cons a t hat ih =>
+      have ha : a.Prime := hQ a (Finset.mem_cons_self a t)
+      have ht : ∀ p ∈ t, p.Prime := fun p hp => hQ p (Finset.mem_cons_of_mem hp)
+      have hsplit : (Ioc 0 N).filter (fun n => ∃ p ∈ Finset.cons a t hat, p ∣ n)
+          = ((Ioc 0 N).filter (fun n => a ∣ n))
+            ∪ ((Ioc 0 N).filter (fun n => ∃ p ∈ t, p ∣ n)) := by
+        rw [← Finset.filter_or]
+        refine Finset.filter_congr fun n _ => ?_
+        simp [Finset.mem_cons, or_and_right, exists_or]
+      rw [hsplit, Finset.sum_cons]
+      have hnn : (0 : ℝ) ≤ ∑ n ∈ ((Ioc 0 N).filter (fun n => a ∣ n))
+          ∩ ((Ioc 0 N).filter (fun n => ∃ p ∈ t, p ∣ n)),
+          vonMangoldt n ^ 2 / n := by
+        refine Finset.sum_nonneg fun n _ => ?_
+        positivity
+      have hui := Finset.sum_union_inter
+        (s₁ := (Ioc 0 N).filter (fun n => a ∣ n))
+        (s₂ := (Ioc 0 N).filter (fun n => ∃ p ∈ t, p ∣ n))
+        (f := fun n => vonMangoldt n ^ 2 / n)
+      have h1 := prime_tower_energy ha N
+      have h2 := ih ht
+      linarith
+
+open ArithmeticFunction in
+/-- **Finite Euler-factor deletion (abstract Dirichlet instance)**: ζ's
+von Mangoldt system, masked at finitely many primes and twisted by any
+selector with values in {0} ∪ {unimodular} whose zeros lie over the
+deleted primes, inhabits the modulus interface — with defect constant
+D_Q = Σ_{p∈Q} log²p/(p−1). This is the Dirichlet-character shape with
+the character abstracted away; the named `DirichletCharacter` corollary
+is Mathlib plumbing on top of this theorem. Interfaces frozen: nothing
+in `EulerStiffness`/`EulerStiffnessC` was modified. -/
+theorem euler_factor_deletion (u : ℕ → ℂ) (Q : Finset ℕ)
+    (hQ : ∀ p ∈ Q, p.Prime)
+    (hu : ∀ n, u n = 0 ∨ ‖u n‖ = 1)
+    (hzero : ∀ n, 0 < n → u n = 0 → ∃ p ∈ Q, p ∣ n) :
+    EulerStiffnessC (fun n => u n * ((vonMangoldt n : ℝ) : ℂ)) := by
+  classical
+  refine masked_twist eulerStiffness_vonMangoldt u hu
+    (D := ∑ p ∈ Q, Real.log p ^ 2 / ((p : ℝ) - 1)) ?_ ?_
+  · refine Finset.sum_nonneg fun p hp => ?_
+    have h2 : 2 ≤ p := (hQ p hp).two_le
+    have : (1 : ℝ) ≤ (p : ℝ) := by exact_mod_cast Nat.one_le_of_lt (hQ p hp).one_lt
+    exact div_nonneg (sq_nonneg _) (by linarith)
+  · intro x _
+    have hpoint : ∀ n ∈ Ioc 0 ⌊x⌋₊,
+        (vonMangoldt n ^ 2 - (‖u n‖ * vonMangoldt n) ^ 2) / n
+        ≤ (if ∃ p ∈ Q, p ∣ n then vonMangoldt n ^ 2 / n else 0) := by
+      intro n hn
+      have hn0 : 0 < n := (Finset.mem_Ioc.mp hn).1
+      rcases hu n with h | h
+      · have hQn := hzero n hn0 h
+        rw [if_pos hQn, h]
+        simp
+      · rw [h, one_mul, sub_self, zero_div]
+        split
+        · positivity
+        · exact le_refl 0
+    calc ∑ n ∈ Ioc 0 ⌊x⌋₊,
+          (vonMangoldt n ^ 2 - (‖u n‖ * vonMangoldt n) ^ 2) / n
+        ≤ ∑ n ∈ Ioc 0 ⌊x⌋₊,
+          (if ∃ p ∈ Q, p ∣ n then vonMangoldt n ^ 2 / n else 0) :=
+          Finset.sum_le_sum hpoint
+      _ = ∑ n ∈ (Ioc 0 ⌊x⌋₊).filter (fun n => ∃ p ∈ Q, p ∣ n),
+          vonMangoldt n ^ 2 / n := by
+          rw [Finset.sum_filter]
+      _ ≤ ∑ p ∈ Q, Real.log p ^ 2 / ((p : ℝ) - 1) :=
+          bad_prime_energy Q hQ ⌊x⌋₊
 end Factorization
+
 
 
 #print axioms Factorization.sum_sq_le
@@ -861,3 +1052,6 @@ end Factorization
 #print axioms Factorization.defect_stability
 #print axioms Factorization.masked_twist
 #print axioms Factorization.geom_tail_le
+#print axioms Factorization.prime_tower_energy
+#print axioms Factorization.bad_prime_energy
+#print axioms Factorization.euler_factor_deletion

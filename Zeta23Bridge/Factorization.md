@@ -1,6 +1,6 @@
 # The Factorization Experiment: does [Z23] factor through `EulerStiffness`?
 
-**Status: arithmetic factorization complete (F0–F4a); full abstract theorem pending coefficient-free assembly (F4-final). This document is the running record of the ledger's production commitment (ii) (`Papers/Critical_Line_Ledger_Aug2026.md`, §8): *either prove that [Z23]'s bound factors through `EulerStiffness`, or report the obstruction to doing so.* Started and brought to arithmetic completeness August 12, 2026; revised after four review rounds. Current formal state (pasted from `audit.sh` output): `# SUMMARY: 81 theorems, 81 audited, 0 gaps, 0 sorryAx` (three of the 81 — `Sponge.embed_add`, `embed_injective`, `mem_stratum_iff` — use no axioms at all); audit enforced by `audit.sh` (declared-vs-audited diff with count assertion, fails on gap or mismatch) and by CI (`.github/workflows/audit.yml`).**
+**Status: arithmetic factorization complete (F0–F4a); full abstract theorem pending coefficient-free assembly (F4-final). This document is the running record of the ledger's production commitment (ii) (`Papers/Critical_Line_Ledger_Aug2026.md`, §8): *either prove that [Z23]'s bound factors through `EulerStiffness`, or report the obstruction to doing so.* Started and brought to arithmetic completeness August 12, 2026; revision history in git. Current formal state (pasted from `audit.sh` output): `# SUMMARY: 81 theorems, 81 audited, 0 gaps, 0 sorryAx` (three of the 81 — `Sponge.embed_add`, `embed_injective`, `mem_stratum_iff` — use no axioms at all); audit enforced by `audit.sh` (declared-vs-audited diff with count assertion, fails on gap or mismatch) and by CI (`.github/workflows/audit.yml`).**
 
 ---
 
@@ -12,17 +12,17 @@ Method: every lemma/proposition of [Z23] §§2–6 was checked for the arithmeti
 |---|---|---|
 | Lemma 5.1, Σ_{n≤x} Λ(n) ≪ x | Chebyshev bound | **FIELD** (`chebyshev`) |
 | Lemma 5.1, Σ Λ(n)²/n = ½log²x + O(log x) | Mertens second moment | **FIELD** (`mertens_energy`) |
-| Lemma 5.1, Σ Λ(n)² ≪ x·log x | — | **DERIVED** (F1.1: `log_size` × `chebyshev`) |
-| Lemma 5.1, Σ Λ(n)/√n ≪ √x (and its log-weighted variant) | — | **DERIVED**, two grades: crude √x·log x by Cauchy–Schwarz from `mertens_energy` (F1.2, proven); sharp √x by Abel summation from `chebyshev` (F2, standard, not yet formalized) |
-| (5.2) second form, Σ Λ²/n·(L − log n) = L³/6 + O(L²) | — | **DERIVED** (F2: one integration of `mertens_energy`; [Z23] itself proves it as ∫(5.2a)dt/t) |
-| Prop 5.6 general-window diagonal, Σ aₙ²·g(log n) | — | **DERIVED** (F2: partial summation from `mertens_energy` with ‖g′‖ ≤ 2; this is [Z23] §7.1's own route) |
+| Lemma 5.1, Σ Λ(n)² ≪ x·log x | — | **DERIVED** — `sum_sq_le` |
+| Lemma 5.1, Σ Λ(n)/√n ≪ √x (and its log-weighted variant) | — | **DERIVED** — `sum_div_sqrt_le` (sharp, dyadic descent) and `sum_mul_log_div_sqrt_le`; crude Cauchy–Schwarz grade `sum_div_sqrt_sq_le` retained |
+| (5.2) second form, Σ Λ²/n·(L − log n) = L³/6 + O(L²) | — | **DERIVED** — `integrated_second_moment` (finite Abel; equality grade) |
+| Prop 5.6 general-window diagonal, Σ aₙ²·g(log n) | — | **DERIVED** — `tapered_diagonal` (sandwich; correspondence to [Z23]'s concrete windows is precision-rule-3 material) |
 | Lemma 5.2 (Montgomery–Vaughan Hilbert inequality) | none (coefficient-free analytic inequality; already formalized in `Zeta23/MV`) | analytic, not arithmetic |
 | (5.3) frequency spacing δₙ⁻¹ ≤ 2n and Σ aₙ²/δₙ ≪ XL | integer support geometry + Σ f² | **DERIVED** (F1.3 spacing; then F1.1) |
-| (5.4) pointwise ν_X bound | Σ f/√n + Stirling | **DERIVED** + archimedean |
+| (5.4) pointwise ν_X bound | Σ f/√n + Stirling | **DERIVED** (`sum_div_sqrt_le`) + archimedean |
 | Prop 5.3 (trace): µ-part / P-part / Π-part | archimedean / Σ f/√n / pole term | archimedean + **DERIVED** + **PACKAGE** |
 | Prop 5.5 (M[µ,µ]) | none (archimedean) | archimedean |
 | Prop 5.6 off-diagonal O₁, O₂ | MV + Σ f², (Σ f/√n)² | **DERIVED** |
-| Prop 5.7 (cross terms) | Σ f/√n, Σ f/(√n·log n)-type sums | **DERIVED** (F2 grade) |
+| Prop 5.7 (cross terms) | Σ f/√n, Σ f/(√n·log n)-type sums | **DERIVED** (`sum_div_sqrt_le`, `sum_mul_log_div_sqrt_le`) |
 | §2 explicit formula; App A normalization | functional equation, entire completion, contour | **PACKAGE** |
 | §4 zero side: ρ ↦ 1−ρ̄ symmetry; N(t+1)−N(t) ≪ log; RvM; tail Prop 4.2 | zero-multiset properties | **PACKAGE** (and the inertia core is already abstract: `strut_hyperbolic_shadow_bound` holds for *any* configuration) |
 | §6 assembly | bookkeeping | — |
@@ -81,13 +81,15 @@ This is still the program's first *production* in the ledger §5 sense — a usa
 
 ## Registered constraints and open problems (round 5)
 
-**F3b-instance constraint (registered per review): the interfaces are frozen for this test.** If the Dirichlet instance cannot be established from `defect_stability` + `masked_twist` + the bad-prime energy bound + Mathlib character facts *without modifying* `EulerStiffness`/`EulerStiffnessC`, the correct move is to stop and classify the missing assumption — the classification is the result. First brick laid: `geom_tail_le` (the per-prime geometric tail, via the tower telescope).
+**F3b-instance constraint (registered per review): the interfaces are frozen for this test.** If the Dirichlet instance cannot be established from `defect_stability` + `masked_twist` + the bad-prime energy bound + Mathlib character facts *without modifying* `EulerStiffness`/`EulerStiffnessC`, the correct move is to stop and classify the missing assumption — the classification is the result. **The arithmetic core is now complete (same day):** `geom_tail_le` (per-prime geometric tail, via the tower telescope imported from SpongeStage) → `prime_tower_energy` (each prime's stratum carries energy ≤ log²p/(p−1): the p-power support reindexes along the valuation to a geometric tail) → `bad_prime_energy` (the union bound over a finite prime set, by cons-induction with `sum_union_inter`) → **`euler_factor_deletion`**: ζ's von Mangoldt system, masked at finitely many primes and twisted by *any* selector with values in {0} ∪ {unimodular} whose zeros lie over the deleted primes, inhabits the modulus interface, with defect constant D_Q = Σ_{p∈Q} log²p/(p−1). **Interfaces frozen throughout — the registered constraint held: nothing in `EulerStiffness`/`EulerStiffnessC` was modified.** This is the Dirichlet instance in abstract-selector form; the named `DirichletCharacter` corollary is now pure Mathlib plumbing (‖χ(n)‖ ∈ {0,1} for character values; zeros exactly over p ∣ q via `ZMod.isUnit_iff_coprime`) on top of a finished theorem. The working title's "stable under finite Euler-factor deletion and unimodular twisting" clause is hereby earned at the abstract level; the "second inhabitant" naming awaits the corollary.
 
-**F6 (registered open problem): the ceiling metatheorem.** Construct two admissible interface-satisfying coefficient systems whose completed objects have different critical-line proportions — which would prove the ≈0.68185 ceiling is information-theoretic rather than architectural — or prove no such pair exists. Either outcome is informative about which completed-package hypotheses do the rigidity work. Registered while the answer is unknown.
+**F6 (registered open problem, reformulated on review): the ceiling metatheorem — over the F5 package.** Construct two systems satisfying the same `EulerStiffnessC` arithmetic interface **and the requisite completed-package hypotheses**, but having different critical-line proportions; or prove that the completed-package hypotheses prohibit such a pair. (The earlier formulation quantified over bare coefficient systems, presupposing a coefficient-to-completed-object realization the interface deliberately does not contain.) This is the sharper question in any case: it asks exactly where rigidity lives — arithmetic interface vs completed-function package. Registered while the answer is unknown.
 
-**Adapter theorems (F4-final component).** Each shape-covering row of the closure table (precision rule 3) should eventually become a kernel-checked adapter: `Z23WindowHypotheses(g,N,M) ⟹ TaperedDiagonalHypotheses(w,N,M)`. Every correspondence claim moved into the kernel shrinks the remaining epistemic surface.
+**Adapter theorems (F4-final component).** Each shape-covering row of the closure table (precision rule 3) should eventually become a kernel-checked adapter: `Z23WindowHypotheses(g,N,M) ⟹ TaperedDiagonalHypotheses(w,N,M)`. Every correspondence claim moved into the kernel shrinks the remaining epistemic surface — which quietly re-types F4-final itself: from a single distant "formalize the scaffolding" milestone into a program that *monotonically shrinks the audited surface*, one adapter at a time, with the precision-rule machinery automatically recording each conversion. The claims can only move toward the kernel. Priority adapter: the Prop 5.6/tapered-window row.
 
-**Working title for the eventual external note** (review-proposed): *A machine-checked arithmetic factorization of the [Z23] prime side through a five-condition modulus interface, stable under finite Euler-factor deletion and unimodular twisting.*
+**Working title for the eventual external note** (review-proposed; **provisional until F3b-instance lands** — "finite Euler-factor deletion" is earned by the abstract theorems only when the instance compiles): *A machine-checked arithmetic factorization of the [Z23] prime side through a five-condition modulus interface, stable under finite Euler-factor deletion and unimodular twisting.*
+
+**Freeze clarification (registered before the instance build): modification vs parameterization.** The frozen-interface rule forbids changing the *fields* of `EulerStiffness`/`EulerStiffnessC`. It does **not** forbid instance-level parameters: the defect constant D_q = Σ_{p∣q} log²p/(p−1) is q-dependent and that is fine — the inhabitant claim is per-character (for each fixed χ mod q, Λχ satisfies the interface); no uniformity in q is claimed or needed for membership, and "second inhabitant" must not be read as a uniform-family claim.
 
 ## Falsification discipline
 

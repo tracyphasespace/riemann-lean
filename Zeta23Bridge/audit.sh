@@ -6,7 +6,16 @@
 # directives, FAILS on any gap. (3) Emits the audit lines, then a summary
 # line designed to be pasted verbatim into documents (counts in prose
 # must be pasted, never typed — review finding, round 5).
+# Scope boundary (stated, not accidental): def/instance declarations are
+# not enumerated — a sorry inside a definition USED by any audited theorem
+# surfaces as sorryAx in that theorem's transitive audit, so the dangerous
+# path is covered; the only escape is a declared-but-unused sorry, which
+# claims nothing and is caught by the explicit grep below anyway.
 set -e
+if grep -wn "sorry" *.lean; then
+  echo "LITERAL sorry FOUND (see above)" >&2
+  exit 1
+fi
 fail=0
 total_declared=0
 for f in *.lean; do
