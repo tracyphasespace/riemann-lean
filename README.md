@@ -6,7 +6,7 @@ a claims-typed ledger (proven-classical / proven-recent / proven-here / reframin
 with exactly one open row) for the critical-line problem, anchored to the Aug 2026
 two-thirds theorem ([Z23], Anthropic) and to 34 machine-checked Lean 4 theorems in
 [`Zeta23Bridge/`](Zeta23Bridge/) (verification: `lake update && lake exe cache get && lake build`;
-expected axiom audit is the ledger's Appendix A, regenerable via `Zeta23Bridge/audit.sh`). A name-correspondence table (Lean identifiers ↔ standard notation) is in the companion paper §11 and `Zeta23Bridge/README.md`. The program-internal development record is
+expected axiom audit is the ledger's Appendix A, regenerable via `Zeta23Bridge/audit.sh`). A name-correspondence table (Lean identifiers ↔ standard notation) is in the companion paper §11 and `Zeta23Bridge/README.md`. Archived with DOI: [10.5281/zenodo.21907491](https://zenodo.org/records/21907491) (ledger v1.3, Aug 12 2026, CC-BY-4.0). The program-internal development record is
 [`Papers/CliffordNN_TwoThirds_Aug2026.md`](Papers/CliffordNN_TwoThirds_Aug2026.md).
 Historical papers and conditional reductions are in `Papers/` and `Lean/`; their scope
 statements govern (no unconditional proof of RH is claimed anywhere in this repository).
