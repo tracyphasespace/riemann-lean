@@ -223,6 +223,9 @@ theorem parity_projector (n : ℕ) :
 end Sponge
 
 #print axioms Sponge.orthogonality
+#print axioms Sponge.tower_nested
+#print axioms Sponge.coordinates_add
+#print axioms Sponge.reconstruction
 #print axioms Sponge.descent_count
 #print axioms Sponge.haar_projector
 #print axioms Sponge.density_shadow
@@ -477,7 +480,10 @@ end Stage3
 
 #print axioms Stage3.collapse_reconstruct
 #print axioms Stage3.cascade_limit
+#print axioms Stage3.rotor_telescope
 #print axioms Stage3.rotor_haar_annihilate
+#print axioms Stage3.rotor_haar_identity
+#print axioms Stage3.collapse_not_mem_stratum
 #print axioms Stage3.log_independence
 #print axioms Stage3.fair_split
 #print axioms Stage3.product_formula

@@ -535,6 +535,8 @@ end Zeta23Bridge
 
 #print axioms Zeta23Bridge.bivector_commute
 #print axioms Zeta23Bridge.bivector_sq_one
+#print axioms Zeta23Bridge.bivector_sq_neg_one
+#print axioms Zeta23Bridge.shadow_posIndex_le
 #print axioms Zeta23Bridge.posIndex_hypBlock
 #print axioms Zeta23Bridge.negIndex_hypBlock
 #print axioms Zeta23Bridge.strut_hyperbolic_shadow_bound

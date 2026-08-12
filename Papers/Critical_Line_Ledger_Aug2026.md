@@ -1,6 +1,6 @@
 # A Formal Ledger for the Critical-Line Problem
 
-**Tracy McSheery, with Claude (Anthropic) — August 12, 2026 (ledger v1.2; revision history in §10)**
+**Tracy McSheery, with Claude (Anthropic) — August 12, 2026 (ledger v1.3; revision history in §10)**
 
 *This document is written for skeptical readers. Every claim is typed as **proven-classical**, **proven-recent**, **proven-here** (machine-checked, reproducible), **reframing** (no new content claimed), or **heuristic**. Nothing requires trusting the authors; the checked items are checkable by the Lean kernel on your machine.*
 
@@ -13,14 +13,14 @@
 **Claimed — three separable contributions, in decreasing order of defensibility:**
 
 1. **Formal**: a machine-checked interface (`EulerStiffness`) capturing the Euler-product inputs consumed by [Z23]'s prime side, together with an exact, numerics-free demonstration that the Davenport–Heilbronn counterexample cannot satisfy the interface (§2); and a machine-checked identification of [Z23]'s zero-side mechanism with classical Witt/Clifford quadratic-form structure (§3). *We have not re-derived the two-thirds bound through the interface; no factorization theorem is claimed.*
-2. **Methodological**: a formalization discipline — *definitions carry maps; scalar constants appear only in lemmas, as shadows* — under which twenty-six foundational statements compile (§4), plus the standing counterexample rule of §2.
+2. **Methodological**: a formalization discipline — *definitions carry maps; scalar constants appear only in lemmas, as shadows* — under which thirty-four audited statements compile (§4), plus the standing counterexample rule of §2.
 3. **Conceptual, and subordinate to the first two**: a reframing thesis (§5), stated as a thesis: in the unfolded (adelic/torus/operator) presentation, RH is the *naturally-expected* statement, and its distance from theoremhood is one precisely-typed gap. This contribution has value only if it eventually produces mathematics; §8 records what the program commits to producing.
 
-**The open obstruction.** One analytic fact remains open, under several names. Two are **classical equivalents of RH**: (i) the Speiser-circle criterion, (σ−½)·Re(ξ′/ξ)(σ+it) > 0 off the line; (ii) M(x) = O(x^(1/2+ε)) for the Mertens function (Littlewood). Two are **this framework's names for the same obstruction** — "no complementary-series contamination of the zero modes" and "pointwise fairness at the seam" (§5–6) — offered as translations, not as independently proven biconditionals. Nothing in this document discharges the obstruction, and §7 records the known walls constraining any attempt.
+**The open obstruction.** One analytic fact remains open, under several names. Two are **classical equivalents of RH**: (i) Re(ξ′/ξ)(s) > 0 for every s with Re s > ½ (equivalently, via ξ′/ξ(s) = −ξ′/ξ(1−s), the mirrored negativity for Re s < ½) — Lagarias 1999 (*On a positivity property of the Riemann ξ-function*), in the circle of Speiser's theorem; (ii) M(x) = O_ε(x^(1/2+ε)) **for every ε > 0**, for the Mertens function — Littlewood 1912. Two are **this framework's names for the same obstruction** — "no complementary-series contamination of the zero modes" and "pointwise fairness at the seam" (§5–6) — offered as translations, not as independently proven biconditionals. Nothing in this document discharges the obstruction, and §7 records the known walls constraining any attempt.
 
 ## 1. Verification
 
-The formal artifacts are `Zeta23Bridge/Zeta23Bridge.lean` (10 audited theorems) and `Zeta23Bridge/SpongeStage.lean` (16 audited theorems) in this repository (public remote: `github.com/tracyphasespace/riemann-lean`, tag `ledger-v1`; if the tag is not yet visible on the remote, request it from the authors). Toolchain: `leanprover/lean4:v4.33.0-rc2`. Pinned dependency: `anthropics/zeta-23-lean` tag `v1.0` (commit `82ee6340`), which pins Mathlib commit `51e6992e`.
+The formal artifacts are `Zeta23Bridge/Zeta23Bridge.lean` (12 audited theorems) and `Zeta23Bridge/SpongeStage.lean` (22 audited theorems) in this repository (public remote: `github.com/tracyphasespace/riemann-lean`, tag `ledger-v1.3`; **if you are reading this file from that remote, the tag condition is met** — pre-push local copies are pre-release). Toolchain: `leanprover/lean4:v4.33.0-rc2`. Pinned dependency: `anthropics/zeta-23-lean` tag `v1.0` (tag object `82ee6340`, commit `3635e748`), which pins Mathlib commit `51e6992e`.
 
 ```
 cd Zeta23Bridge
@@ -29,7 +29,7 @@ lake exe cache get     # Mathlib olean cache
 lake build             # compiles both files
 ```
 
-Expected output: no errors, no `sorry`, and each of the 26 audited theorems reporting a subset of Lean's three standard axioms `[propext, Classical.choice, Quot.sound]` — the verbatim output is Appendix A (one theorem, `Sponge.orthogonality`, uses only two of the three; the rest use all three; none uses `sorryAx` or any custom axiom).
+Expected output: no errors, no `sorry`, and each of the 34 audited theorems reporting a subset of Lean's three standard axioms `[propext, Classical.choice, Quot.sound]` — the verbatim output is Appendix A (one theorem, `Sponge.orthogonality`, uses only two of the three; the rest use all three; none uses `sorryAx` or any custom axiom).
 
 [Z23]'s own repository carries an independent comparator-style audit of the two-thirds theorem itself.
 
@@ -37,11 +37,13 @@ Expected output: no errors, no `sorry`, and each of the 26 audited theorems repo
 
 ## 2. The Euler-product interface, with its falsification test (proven-here)
 
-This is the document's most defensible original content. `EulerStiffness f` is a Prop-structure packaging four quantitative facts about a system's log-derivative coefficients: support on prime powers; nonnegativity; f(n) ≤ log n; the Mertens second moment Σ_{n≤x} f(n)²/n = ½log²x + O(log x); plus the Chebyshev bound. These are the prime-side inputs [Z23] consumes ([Z23] §5, Lemma 5.1); the interface is offered as a *candidate abstraction* of that role — we have not proven that the two-thirds bound factors through it.
+This is the document's most defensible original content. `EulerStiffness f` is a Prop-structure whose five fields match the Lean definition verbatim: support on prime powers; nonnegativity; f(n) ≤ log n; the Mertens second moment Σ_{n≤x} f(n)²/n = ½log²x + O(log x); and the Chebyshev bound. These are the prime-side inputs [Z23] consumes ([Z23] §5, Lemma 5.1); the interface is offered as a *candidate abstraction* of that role — we have not proven that the two-thirds bound factors through it.
 
 * `eulerStiffness_vonMangoldt` (verified): ζ satisfies the interface, from Mathlib's von Mangoldt lemmas and [Z23]'s own Chebyshev–Mertens module.
-* `logDeriv6_eq_defect` (verified): for **any** coefficient system, the n = 6 log-derivative coefficient equals (c(6) − c(2)c(3))·log 6 — the multiplicativity defect at the first composite where one can exist. An Euler product is precisely the vanishing of all such defects.
+* `logDeriv6_eq_defect` (verified): for **any** coefficient system, the n = 6 log-derivative coefficient equals (c(6) − c(2)c(3))·log 6 — the multiplicativity defect at the first composite where one can exist. For Euler-product coefficient systems these multiplicativity defects vanish; n = 6 is the first composite at which this obstruction can appear.
 * `dh_logDeriv6_pos`, `dh_not_eulerStiffness` (verified): for the Davenport–Heilbronn function (functional equation, no Euler product, off-line zeros known since 1936), the defect is 1 + κ² — **a sum of squares, nonzero for every real κ**: no numerics, no interval arithmetic, no analytic continuation. D-H provably cannot satisfy the interface.
+
+* `zeta_logDerivAt6` (verified): the ζ contrast — the von Mangoldt function satisfies the same local convolution identities with Λ(6) = 0: same recursion, zero defect.
 
 **Standing rule of the program:** any positivity-flavored claim in this program is required to fail on Davenport–Heilbronn, or it is discarded as having used only the functional equation. A frame that arrives carrying its own counterexample test, and shows exactly where the canonical counterexample fails it — at n = 6, in exact algebra — is what we offer the skeptical reader first.
 
@@ -59,7 +61,7 @@ This is the document's most defensible original content. `EulerStiffness f` is a
 
 Reading: each on-line zero contributes a positive rank-one direction; each off-line pair a Witt hyperbolic plane; the theorem is a budget in which each hyperbolic plane refunds at most one positive direction while consuming two zeros of the census. A structural observation a referee can check in an afternoon: **inertia is monotone under projection while convexity is not** — which helps explain, though it does not by itself establish, why this population-level accounting closes where pointwise-positivity programs (including the first author's earlier program, and the Goldston–Suriajaya question) remain open.
 
-## 4. The formalization discipline (proven-here, 16 further theorems)
+## 4. The formalization discipline (proven-here; 22 audited theorems in `SpongeStage.lean`)
 
 The discipline: *definitions carry maps — embeddings, descents, gradings, group averages, coordinates; scalar constants appear only in lemmas, as images under forgetful maps.* Three instances with content:
 
@@ -71,7 +73,7 @@ Further verified: the p-adic tower with valuation-as-descent-count (Kummer–Hen
 
 ## 5. The reframing thesis (interpretation; no new content claimed)
 
-In the unfolded presentation the following are classical identifications: the critical line = the unitary axis of the dilation group (half-densities; Mellin–Plancherel) = the fixed locus of s ↦ 1−s̄ = the RMS composition scale of independent contributions = the spectrum of the symmetrized dilation generator (xp+px)/2 = xp + ½ (Berry–Keating; Connes), whose ½ is the fair split of [∂, x] = 1; on-line vs off-line is the principal-vs-complementary series dichotomy — the same type-statement as Selberg's eigenvalue-¼ conjecture (¼ = s(1−s) at the mirror).
+**Classical identifications**: the critical line = the unitary axis of the dilation group on L²(0,∞) (half-densities; Mellin–Plancherel — equivalently the L² spectrum of the symmetrized dilation generator (xp+px)/2 = xp + ½, whose ½ is the fair split of [∂, x] = 1) = the fixed locus of s ↦ 1−s̄; and the principal-vs-complementary series dichotomy of representation theory, under which "all zeros on the line" is the same *type* of statement as Selberg's eigenvalue-¼ conjecture (¼ = s(1−s) at the mirror). **Conjectural program in the same direction (not classical)**: Berry–Keating and Connes, associating the zeros themselves to a quantization of that generator. **This framework's interpretive identification (not classical)**: the critical line as the RMS/fair-composition scale of independent contributions.
 
 Calibration (classical): **Bohr–Jessen** — the lifted torus governs ζ's value distribution faithfully for σ > 1/2; at σ = 1/2 the regime changes (Selberg's central limit theorem, variance ½ log log t). The zeros live exactly on the seam where the lifted object and its one-dimensional shadow part ways.
 
@@ -108,7 +110,7 @@ The authors are aware that Deninger's program and Connes' trace-formula program 
 
 **Falsifiers.** (a) An element of the Selberg class (Euler product + standard functional equation) violating its Riemann hypothesis would kill this program's "stiffness ⟹ fairness-by-default" interpretation — though we note it would simultaneously falsify much of analytic number theory's working picture, so it is not a *discriminating* test of this frame specifically. (b) More discriminating: a substantial advance of the on-line proportion past ≈ 0.682 by folded methods consuming **no** new additive-correlation input would directly weaken this frame's diagnosis of where the difficulty lives. (c) Any failure of the machine-checked artifacts to reproduce withdraws the corresponding ledger rows.
 
-**Pre-registered expectation** (theorem-backed via [Z23] Rem. 1.1, stated here as this frame's prediction about the field): every future unconditional improvement of the on-line proportion beyond ≈ 0.68185 will be traceable to additive prime-correlation input of Fourier support > 1; the next natural waypoint is 13/18 ≈ 0.722 under a fourth-moment hypothesis. If an improvement arrives that provably consumes only bandwidth-≤1 data, this frame's account is wrong.
+**Adopted expectation** ([Z23] Rem. 1.1's ceiling, adopted as this frame's account of the field; the pre-registration weight rests on the production commitments below): every future unconditional improvement of the on-line proportion beyond ≈ 0.68185 will be traceable to additive prime-correlation input of Fourier support > 1; the next natural waypoint is 13/18 ≈ 0.722 under a fourth-moment hypothesis. If an improvement arrives that provably consumes only bandwidth-≤1 data, this frame's account is wrong.
 
 **Production commitments.** The program's next deliverables, by which it asks to be judged: (i) the native test — a re-derivation of one zero-side statement entirely inside the formalized frame, with the D-H control required to fail (companion paper §10, Stage 3); (ii) the interface factorization — either prove that [Z23]'s bound factors through `EulerStiffness`, or report the obstruction to doing so.
 
@@ -118,17 +120,19 @@ External readers may encounter the program-internal vocabulary in the companion 
 
 ## 10. Provenance and versioning
 
-The two-thirds theorem and its Lean formalization are [Z23]'s (Anthropic, Aug 2026). Classical components are owned as attributed. The Lean artifacts here were produced in an interactive session (McSheery/Claude, Aug 12, 2026); ledger v1.0 was drafted the same day and revised to v1.1 after three independent external reviews, whose accepted findings included: the §3 attribution of the (1,1) mechanism to [Z23]'s abstract; the demotion of "isolating exactly" to "candidate abstraction" in §2; the separation of classical RH-equivalents from framework translations in §0; the Row 8 rewording; the §5 firewall box; the removal of a heuristic archimedean remark to the companion paper; and this versioning section. The companion paper records the program-internal development. Repository tag for this revision: `ledger-v1`. v1.2 (same day) adds the verbatim audit appendix, corrects “each reporting exactly” to the observed subset behavior, and adds the repository-root reviewer routing.
+The two-thirds theorem and its Lean formalization are [Z23]'s (Anthropic, Aug 2026). Classical components are owned as attributed. The Lean artifacts here were produced in an interactive session (McSheery/Claude, Aug 12, 2026); ledger v1.0 was drafted the same day and revised to v1.1 after three reviews by independent AI systems (frontier-model referee-style reviews — **not human peer review**), whose accepted findings included: the §3 attribution of the (1,1) mechanism to [Z23]'s abstract; the demotion of "isolating exactly" to "candidate abstraction" in §2; the separation of classical RH-equivalents from framework translations in §0; the Row 8 rewording; the §5 firewall box; the removal of a heuristic archimedean remark to the companion paper; and this versioning section. The companion paper records the program-internal development. v1.2 (same day) added the verbatim audit appendix, corrected "each reporting exactly" to the observed subset behavior, and added repository-root reviewer routing. v1.3 (same day) responds to a second round of three AI reviews: every prose-referenced theorem is now individually audited (the appendix/prose name drift found by review — `bivector_sq_neg_one`, `shadow_posIndex_le`, `rotor_telescope` and five others lacked audit lines — is closed; the audit grew 26 → 34 and is generated mechanically by `Zeta23Bridge/audit.sh`); the two classical equivalents in §0 carry exact formulations and citations (Lagarias 1999; Littlewood 1912, ∀ε); the `EulerStiffness` field count matches the Lean structure (five); the Euler-product defect sentence is localized; §5 separates classical identifications from the Berry–Keating/Connes conjectural program and from this framework's interpretation; the "pre-registered" expectation is renamed "adopted" with pre-registration weight moved to the production commitments; the [Z23] pin is given as tag object + commit. Repository tag for this revision: `ledger-v1.3`.
 
 ---
 
-## Appendix A. Verbatim axiom audit (26 theorems)
+## Appendix A. Verbatim axiom audit (34 theorems)
 
-Output of `lake env lean` on `Zeta23Bridge.lean` and `SpongeStage.lean`, toolchain `leanprover/lean4:v4.33.0-rc2`, against `zeta-23-lean` v1.0 / Mathlib `51e6992e`:
+Mechanism (chain of custody): each `.lean` file ends with `#print axioms` directives, one per prose-referenced theorem; the lines below are those directives' output in the elaborator log of `lake env lean`, extracted by `Zeta23Bridge/audit.sh`. Toolchain `leanprover/lean4:v4.33.0-rc2`, against `zeta-23-lean` v1.0 (commit `3635e748`) / Mathlib `51e6992e`:
 
 ```
 'Zeta23Bridge.bivector_commute' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Zeta23Bridge.bivector_sq_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.bivector_sq_neg_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Zeta23Bridge.shadow_posIndex_le' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Zeta23Bridge.posIndex_hypBlock' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Zeta23Bridge.negIndex_hypBlock' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Zeta23Bridge.strut_hyperbolic_shadow_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
@@ -138,6 +142,9 @@ Output of `lake env lean` on `Zeta23Bridge.lean` and `SpongeStage.lean`, toolcha
 'Zeta23Bridge.dh_not_eulerStiffness' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Zeta23Bridge.zeta_logDerivAt6' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Sponge.orthogonality' depends on axioms: [propext, Quot.sound]
+'Sponge.tower_nested' depends on axioms: [propext]
+'Sponge.coordinates_add' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Sponge.reconstruction' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Sponge.descent_count' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Sponge.haar_projector' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Sponge.density_shadow' depends on axioms: [propext, Classical.choice, Quot.sound]
@@ -149,7 +156,10 @@ Output of `lake env lean` on `Zeta23Bridge.lean` and `SpongeStage.lean`, toolcha
 'Stage2.sieve_times_tower' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Stage3.collapse_reconstruct' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Stage3.cascade_limit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.rotor_telescope' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Stage3.rotor_haar_annihilate' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.rotor_haar_identity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Stage3.collapse_not_mem_stratum' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Stage3.log_independence' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Stage3.fair_split' depends on axioms: [propext, Classical.choice, Quot.sound]
 'Stage3.product_formula' depends on axioms: [propext, Classical.choice, Quot.sound]
