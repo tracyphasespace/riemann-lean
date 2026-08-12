@@ -528,6 +528,90 @@ theorem integrated_second_moment (hf : EulerStiffness f) :
     nlinarith [hlog2, hl2, hlogN, sq_nonneg (Real.log N)]
   linarith [hmain, herr, hfinal]
 
+/-! ## Stage F3: the modulus interface (phase-blind by definition)
+
+[Z23] Theorem E reruns the proof for Dirichlet L-functions with
+coefficients Λ(n)χ(n); their §7.3 notes the phase factors "enter all
+bounds only through |aₙ|". Stage F3 types this per the style-law
+(companion paper §11, clause 2): **the concept is modulus + rotor, and
+the interface reads only the modulus.** Accordingly `EulerStiffnessC` is
+not a new ℂ-carrying structure but a *definition*: a phase-carrying
+system (modeled as ℂ-valued — ℂ as shadow, never as carrier) satisfies
+the interface iff its modulus, a real object, does. Phase-blindness is
+definitional; rotor-invariance (`twist`) is a `funext`; every F1/F2
+estimate transfers by `Iff.rfl`-strength reductions. -/
+
+/-- The modulus interface: `g` qualifies iff its modulus satisfies the
+real interface. ℂ here is the standard *model* of a modulus-plus-rotor
+system; the definition consumes only `‖g n‖`. -/
+def EulerStiffnessC (g : ℕ → ℂ) : Prop :=
+  EulerStiffness (fun n => ‖g n‖)
+
+/-- The modulus reduction — definitional. -/
+theorem EulerStiffnessC.norm {g : ℕ → ℂ} (hg : EulerStiffnessC g) :
+    EulerStiffness (fun n => ‖g n‖) := hg
+
+/-- A real interface system, embedded in the model, qualifies. -/
+theorem EulerStiffness.toC {f : ℕ → ℝ} (hf : EulerStiffness f) :
+    EulerStiffnessC (fun n => (f n : ℂ)) := by
+  unfold EulerStiffnessC
+  have heq : (fun n => ‖((f n : ℝ) : ℂ)‖) = fun n => f n :=
+    funext fun n => by
+      rw [Complex.norm_real, Real.norm_of_nonneg (hf.nonneg n)]
+  rw [heq]
+  exact hf
+
+/-- ζ in the modulus interface. -/
+theorem eulerStiffnessC_vonMangoldt :
+    EulerStiffnessC (fun n => ((ArithmeticFunction.vonMangoldt n : ℝ) : ℂ)) :=
+  EulerStiffness.toC eulerStiffness_vonMangoldt
+
+/-- **Rotor invariance (the Dirichlet shape)**: a unimodular twist — a
+rotor per coefficient — preserves the interface *definitionally*: the
+moduli are literally the same function. This is the abstract form of
+[Z23] §7.3. (A primitive character's vanishing at p ∣ q is
+sub-unimodular and is instance-level work: milestone F3b.) -/
+theorem EulerStiffnessC.twist {g : ℕ → ℂ} (hg : EulerStiffnessC g)
+    (u : ℕ → ℂ) (hu : ∀ n, ‖u n‖ = 1) :
+    EulerStiffnessC (fun n => u n * g n) := by
+  unfold EulerStiffnessC at hg ⊢
+  have heq : (fun n => ‖u n * g n‖) = fun n => ‖g n‖ :=
+    funext fun n => by rw [norm_mul, hu n, one_mul]
+  rw [heq]
+  exact hg
+
+/-- F2a transferred: the sharp √-moment for phase-carrying systems. -/
+theorem sum_norm_div_sqrt_le {g : ℕ → ℂ} (hg : EulerStiffnessC g) (n : ℕ) :
+    ∑ k ∈ Ioc 0 n, ‖g k‖ / Real.sqrt k
+      ≤ 2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt n) :=
+  sum_div_sqrt_le hg.norm n
+
+/-- F2b transferred: the integrated second moment for phase-carrying
+systems. -/
+theorem integrated_second_momentC {g : ℕ → ℂ} (hg : EulerStiffnessC g) :
+    ∃ C : ℝ, 0 < C ∧ ∀ N : ℕ, 2 ≤ N →
+      |(∑ n ∈ Ioc 0 N, ‖g n‖ ^ 2 / n * (Real.log N - Real.log n))
+        - Real.log N ^ 3 / 6| ≤ C * Real.log N ^ 2 :=
+  integrated_second_moment hg.norm
+
+/-- The 6-cell exclusion, modulus form. -/
+theorem EulerStiffnessC.apply_six {g : ℕ → ℂ} (hg : EulerStiffnessC g) :
+    g 6 = 0 := by
+  by_contra h
+  exact not_isPrimePow_six
+    (hg.norm.support_primePow 6 (norm_ne_zero_iff.mpr h))
+
+/-- **Davenport–Heilbronn is excluded from the modulus interface too**:
+the defect 1 + κ² ≠ 0 survives the embedding into the model. -/
+theorem dh_not_eulerStiffnessC {f L : ℕ → ℝ} (κ : ℝ)
+    (hf2 : f 2 = κ) (hf3 : f 3 = -κ) (hf6 : f 6 = 1)
+    (h : LogDerivAt6 f L) :
+    ¬ EulerStiffnessC (fun n => (L n : ℂ)) := by
+  intro hE
+  have h6 : ((L 6 : ℝ) : ℂ) = 0 := hE.apply_six
+  have h6R : L 6 = 0 := by exact_mod_cast h6
+  exact absurd h6R (ne_of_gt (dh_logDeriv6_pos κ hf2 hf3 hf6 h))
+
 end Factorization
 
 #print axioms Factorization.sum_sq_le
@@ -545,3 +629,10 @@ end Factorization
 #print axioms Factorization.cube_step
 #print axioms Factorization.sq_step
 #print axioms Factorization.integrated_second_moment
+#print axioms Factorization.EulerStiffnessC.norm
+#print axioms Factorization.EulerStiffness.toC
+#print axioms Factorization.eulerStiffnessC_vonMangoldt
+#print axioms Factorization.EulerStiffnessC.twist
+#print axioms Factorization.sum_norm_div_sqrt_le
+#print axioms Factorization.integrated_second_momentC
+#print axioms Factorization.dh_not_eulerStiffnessC
