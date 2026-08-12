@@ -78,3 +78,76 @@ flatters the registered prediction gets checked hardest.
 ---
 
 ## Results (appended after the run; design above is frozen)
+
+**Run 2026-08-12, instrument as committed (mp.dps=12, ε=0.02, T=120,
+extended hunts to 360). Raw output preserved in git with this commit.**
+
+### Validation gates
+
+- **V1 PASS**: t = 0 clean to T = 360 both sides.
+- **V2 PASS**: t = 1 gives N_right = 2 with first strip [83.1, 86.8] —
+  the literature Davenport–Heilbronn zero (γ ≈ 85.70) rediscovered.
+- **V3 PASS**: 𝒦(0) = 0 exactly; 𝒦/t² → ≈ 15 from the small-t side.
+
+### Data
+
+| t | 𝒦(t) | N_right (≤120) | N_left (≤120) | first right-zero |
+|---|---|---|---|---|
+| 0.00 | 0 | 0 (0 to 360) | 0 | — |
+| 0.05 | 0.037 | 0 (0 to 360) | **2** | — |
+| 0.15 | 0.301 | 4 | 12 | [24.1, 27.8] |
+| 0.30 | 1.019 | 7 | 17 | [5.7, 9.4] |
+| 0.60 | 2.798 | 11 | 20 | [5.7, 9.4] |
+| 1.00 | 4.223 | 2 | 2 | [83.1, 86.8] |
+
+### Findings (claim-typed)
+
+**E2-F1 [computed]: none of the three pre-registered outcomes describes
+the data.** The registered prediction (graded split via a height horizon
+T_first(t) → ∞) is **not confirmed as stated**: off-line zeros exist
+already at t = 0.05 *below* T = 120 — on the left.
+
+**E2-F2 [computed]: the off-line count is non-monotone in t, with a
+crash at the self-dual endpoint.** Total off-line zeros ≤ 120:
+0 → 2 → 16 → 24 → 31 → **4**. Curvature 𝒦 rises monotonically
+throughout (2.80 → 4.22 on [0.6, 1]) while the count collapses 31 → 4.
+**𝒦 does not monotonically govern off-line abundance along this path.**
+
+**E2-F3 [computed]: chirality.** Interior members put off-line zeros
+predominantly LEFT of the critical line (12 vs 4 at t = 0.15; 20 vs 11
+at t = 0.6); the endpoints are symmetric. Interior members are not
+self-dual — each F_t's functional equation pairs it with a *different*
+member of V — so nothing pins their zeros to the line or distributes
+them symmetrically. The left excess itself is unexplained [open].
+
+**E2-F4 [interpretation, typed]: the experiment separated two defect
+axes the design conflated.** Endpoint t = 0 is rigid by Euler product;
+endpoint t = 1 is rigid by self-duality (the Bombieri–Hejhal mechanism —
+almost all zeros on the line for self-dual combinations); the interior
+has *neither* protection and behaves like a generic perturbation: each
+on-line zero ρ of L(χ) drifts off by ≈ t·|βʹ·L̄(ρ)/L′(ρ)|, escaping the
+ε = 0.02 corridor gradually — a sliding visibility horizon in
+*displacement*, not height. This mechanism explains the growth
+0 → 31 and the t → 0 vanishing, but NOT the left bias (it predicts
+symmetric escape) — so it is at best half the story. The Davenport–
+Heilbronn point, classically "the counterexample," is along this path
+the *second most line-rigid object after the Euler product itself*.
+
+### Consequences for F8 (registered)
+
+1. The defect tensor needs a **second coordinate**: duality defect,
+   alongside multiplicativity defect 𝒦. Off-line abundance along this
+   path tracks duality defect at least as strongly as 𝒦.
+2. **Follow-up experiment (designed before run, not yet run): the
+   self-dual sweep.** Identify the self-dual sub-family of V (the ray
+   through f_DH; one real parameter after normalization) and sweep 𝒦
+   along it with duality held fixed. That isolates pure
+   curvature-vs-zeros. Outcomes to register before running.
+3. **Robustness follow-up**: ε-sweep (0.005 / 0.01 / 0.05) — the
+   corridor blind spot is now load-bearing for the "displacement
+   horizon" reading; and localize T_first on the LEFT at t = 0.05
+   (instrument gap: only right-box bisection was implemented).
+4. Scored honestly: the registered prediction (iii) was wrong in
+   mechanism (height vs displacement), right that no clean threshold
+   exists, and blind to the dominant effect (duality). Both
+   pre-registered "continuity"and "rigidity gap" are refuted as stated.
