@@ -275,6 +275,224 @@ theorem parity_diff_support (K : ℝ → ℝ) (N : ℕ) :
       linear_combination (((Λ m : ℝ) : ℂ) * ((Λ n : ℝ) : ℂ)
         * ((K (Real.log m - Real.log n) : ℝ) : ℂ)) * hsgnC
 
+/-! ## The fingerprint is thin: the first *estimate* of the stratification
+
+`parity_diff_support` locates the parity fingerprint; the theorems below
+measure it. Odd total grade forces one leg of every contributing pair to
+have even grade ≥ 2 — i.e. to be a **perfect square** — and the square
+von Mangoldt mass up to N is √N·log N-small while the total mass is
+Chebyshev. Hence the fingerprint is O(N^{3/2}·log N) against the
+N²-scale of the pair energies: the classically dangerous twin is
+*quantitatively* invisible at two-point order. -/
+
+open ArithmeticFunction in
+/-- On Λ's support, even grade forces a perfect square: n = p^j with j
+even is (p^{j/2})². -/
+theorem isSquare_of_even_grade {n : ℕ} (hn : Λ n ≠ 0)
+    (he : Even (ArithmeticFunction.cardFactors n)) : IsSquare n := by
+  have hpp : IsPrimePow n := by
+    by_contra hc
+    exact hn (ArithmeticFunction.vonMangoldt_eq_zero_iff.mpr hc)
+  obtain ⟨p, k, hp, hk, rfl⟩ := hpp
+  rw [ArithmeticFunction.cardFactors_apply_prime_pow (Nat.prime_iff.mpr hp)] at he
+  obtain ⟨i, rfl⟩ := he
+  exact ⟨p ^ i, by rw [← pow_add]⟩
+
+open ArithmeticFunction in
+/-- The von Mangoldt mass on perfect squares is √N·log N-small: at most
+√N squares up to N, each carrying Λ ≤ log N. -/
+theorem square_vonMangoldt_mass {N : ℕ} (hN : 1 ≤ N) :
+    ∑ n ∈ (Ioc 0 N).filter (fun n => IsSquare n), Λ n
+      ≤ Real.sqrt N * Real.log N := by
+  classical
+  set S := (Ioc 0 N).filter (fun n => IsSquare n) with hS
+  have hlogN : 0 ≤ Real.log N := Real.log_nonneg (by exact_mod_cast hN)
+  have hbound : ∀ n ∈ S, Λ n ≤ Real.log N := by
+    intro n hn
+    rw [hS, Finset.mem_filter, Finset.mem_Ioc] at hn
+    calc Λ n ≤ Real.log n := ArithmeticFunction.vonMangoldt_le_log
+      _ ≤ Real.log N :=
+          Real.log_le_log (by exact_mod_cast hn.1.1) (by exact_mod_cast hn.1.2)
+  have hsq_rep : ∀ a ∈ S, a = Nat.sqrt a ^ 2 := by
+    intro a ha
+    rw [hS, Finset.mem_filter] at ha
+    obtain ⟨r, hr⟩ := ha.2
+    rw [hr]
+    simp only [← pow_two]
+    rw [Nat.sqrt_eq']
+  have hcard : S.card ≤ Nat.sqrt N := by
+    have := Finset.card_le_card_of_injOn (fun n => Nat.sqrt n)
+      (s := S) (t := Ioc 0 (Nat.sqrt N)) ?_ ?_
+    · simpa using this
+    · intro n hn
+      have hn' := hn
+      rw [Finset.mem_coe, hS, Finset.mem_filter, Finset.mem_Ioc] at hn'
+      simp only [Finset.coe_Ioc, Set.mem_Ioc]
+      exact ⟨Nat.sqrt_pos.mpr hn'.1.1, Nat.sqrt_le_sqrt hn'.1.2⟩
+    · intro a ha b hb hab
+      have hab' : Nat.sqrt a = Nat.sqrt b := hab
+      rw [hsq_rep a (by simpa using ha), hsq_rep b (by simpa using hb), hab']
+  calc ∑ n ∈ S, Λ n
+      ≤ S.card • Real.log N := Finset.sum_le_card_nsmul S _ _ hbound
+    _ = (S.card : ℝ) * Real.log N := nsmul_eq_mul _ _
+    _ ≤ (Nat.sqrt N : ℝ) * Real.log N :=
+        mul_le_mul_of_nonneg_right (by exact_mod_cast hcard) hlogN
+    _ ≤ Real.sqrt N * Real.log N :=
+        mul_le_mul_of_nonneg_right Real.nat_sqrt_le_real_sqrt hlogN
+
+open ArithmeticFunction in
+/-- Chebyshev at a natural cutoff, from the interface instance. -/
+theorem vonMangoldt_sum_le (N : ℕ) :
+    ∑ n ∈ Ioc 0 N, Λ n ≤ (Real.log 4 + 4) * N := by
+  have h := eulerStiffness_vonMangoldt.chebyshev (N : ℝ) (Nat.cast_nonneg N)
+  simpa using h
+
+open ArithmeticFunction in
+/-- **The fingerprint is thin**: for any kernel bounded by 1, the parity
+pair's two-point separation is at most 4·(√N·log N)·((log 4 + 4)·N) =
+O(N^{3/2}·log N) — against the N²-scale of the pair energies. The
+classically dangerous twin is quantitatively invisible at two-point
+order; the stratification's first estimate. -/
+theorem parity_fingerprint_thin (K : ℝ → ℝ) (hK : ∀ t, |K t| ≤ 1)
+    {N : ℕ} (hN : 1 ≤ N) :
+    ‖PairEnergy
+        (fun n => (((-1 : ℝ) ^ (ArithmeticFunction.cardFactors n) * Λ n : ℝ) : ℂ))
+        K N
+      - PairEnergy (fun n => ((Λ n : ℝ) : ℂ)) K N‖
+    ≤ 4 * (Real.sqrt N * Real.log N) * ((Real.log 4 + 4) * N) := by
+  classical
+  rw [parity_diff_support]
+  have hterm : ∀ m ∈ Ioc 0 N, ∀ n ∈ Ioc 0 N,
+      ‖if m ≠ n ∧
+          ¬ Even (ArithmeticFunction.cardFactors m
+            + ArithmeticFunction.cardFactors n)
+        then ((((-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)) : ℝ) : ℂ)
+        else 0‖
+      ≤ 2 * ((if IsSquare m then Λ m else 0) * Λ n)
+        + 2 * (Λ m * (if IsSquare n then Λ n else 0)) := by
+    intro m _ n _
+    have hΛm : (0 : ℝ) ≤ Λ m := ArithmeticFunction.vonMangoldt_nonneg
+    have hΛn : (0 : ℝ) ≤ Λ n := ArithmeticFunction.vonMangoldt_nonneg
+    have hRHS0 : (0 : ℝ) ≤ 2 * ((if IsSquare m then Λ m else 0) * Λ n)
+        + 2 * (Λ m * (if IsSquare n then Λ n else 0)) := by
+      have h1 : (0 : ℝ) ≤ (if IsSquare m then Λ m else 0) := by
+        split_ifs <;> simp [hΛm]
+      have h2 : (0 : ℝ) ≤ (if IsSquare n then Λ n else 0) := by
+        split_ifs <;> simp [hΛn]
+      have := mul_nonneg h1 hΛn
+      have := mul_nonneg hΛm h2
+      linarith
+    by_cases hc : m ≠ n ∧
+        ¬ Even (ArithmeticFunction.cardFactors m
+          + ArithmeticFunction.cardFactors n)
+    · rw [if_pos hc]
+      obtain ⟨hmn, hodd⟩ := hc
+      have hnorm : ‖((((-2 : ℝ) * (Λ m * Λ n)
+            * K (Real.log m - Real.log n)) : ℝ) : ℂ)‖
+          = |(-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)| := by
+        rw [Complex.norm_real, Real.norm_eq_abs]
+      have habs : |(-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)|
+          ≤ 2 * (Λ m * Λ n) := by
+        rw [abs_mul]
+        have h1 : |(-2 : ℝ) * (Λ m * Λ n)| = 2 * (Λ m * Λ n) := by
+          rw [abs_mul, abs_neg]
+          simp [abs_of_nonneg (mul_nonneg hΛm hΛn)]
+        rw [h1]
+        calc 2 * (Λ m * Λ n) * |K (Real.log m - Real.log n)|
+            ≤ 2 * (Λ m * Λ n) * 1 :=
+              mul_le_mul_of_nonneg_left (hK _)
+                (mul_nonneg (by norm_num) (mul_nonneg hΛm hΛn))
+          _ = 2 * (Λ m * Λ n) := mul_one _
+      by_cases hz : Λ m * Λ n = 0
+      · rw [hnorm]
+        calc |(-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)|
+            ≤ 2 * (Λ m * Λ n) := habs
+          _ = 0 := by rw [hz, mul_zero]
+          _ ≤ _ := hRHS0
+      · have hΛm0 : Λ m ≠ 0 := fun h => hz (by rw [h, zero_mul])
+        have hΛn0 : Λ n ≠ 0 := fun h => hz (by rw [h, mul_zero])
+        have hsq : IsSquare m ∨ IsSquare n := by
+          rcases Nat.even_or_odd (ArithmeticFunction.cardFactors m) with hem | hom
+          · exact Or.inl (isSquare_of_even_grade hΛm0 hem)
+          · have hen : Even (ArithmeticFunction.cardFactors n) := by
+              rcases Nat.even_or_odd (ArithmeticFunction.cardFactors n)
+                with hen | hon
+              · exact hen
+              · exact absurd (Odd.add_odd hom hon) hodd
+            exact Or.inr (isSquare_of_even_grade hΛn0 hen)
+      -- with a square leg, one of the two summands already dominates
+        rw [hnorm]
+        rcases hsq with h | h
+        · rw [if_pos h]
+          have h2 : (0 : ℝ) ≤ Λ m * (if IsSquare n then Λ n else 0) := by
+            apply mul_nonneg hΛm
+            split_ifs <;> simp [hΛn]
+          calc |(-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)|
+              ≤ 2 * (Λ m * Λ n) := habs
+            _ ≤ 2 * (Λ m * Λ n) + 2 * (Λ m * (if IsSquare n then Λ n else 0)) := by
+                linarith
+        · rw [if_pos h]
+          have h1 : (0 : ℝ) ≤ (if IsSquare m then Λ m else 0) * Λ n := by
+            apply mul_nonneg _ hΛn
+            split_ifs <;> simp [hΛm]
+          calc |(-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)|
+              ≤ 2 * (Λ m * Λ n) := habs
+            _ ≤ 2 * ((if IsSquare m then Λ m else 0) * Λ n)
+                + 2 * (Λ m * Λ n) := by linarith
+    · rw [if_neg hc]
+      simpa using hRHS0
+  have hA0 : (0 : ℝ) ≤ ∑ n ∈ Ioc 0 N, (if IsSquare n then Λ n else 0) :=
+    Finset.sum_nonneg fun n _ => by
+      split_ifs <;> simp [ArithmeticFunction.vonMangoldt_nonneg]
+  have hB0 : (0 : ℝ) ≤ ∑ n ∈ Ioc 0 N, Λ n :=
+    Finset.sum_nonneg fun n _ => ArithmeticFunction.vonMangoldt_nonneg
+  have hA : ∑ n ∈ Ioc 0 N, (if IsSquare n then Λ n else 0)
+      ≤ Real.sqrt N * Real.log N := by
+    rw [← Finset.sum_filter]
+    exact square_vonMangoldt_mass hN
+  have hB : ∑ n ∈ Ioc 0 N, Λ n ≤ (Real.log 4 + 4) * N := vonMangoldt_sum_le N
+  calc ‖∑ m ∈ Ioc 0 N, ∑ n ∈ Ioc 0 N, _‖
+      ≤ ∑ m ∈ Ioc 0 N, ‖∑ n ∈ Ioc 0 N, _‖ := norm_sum_le _ _
+    _ ≤ ∑ m ∈ Ioc 0 N, ∑ n ∈ Ioc 0 N,
+          (2 * ((if IsSquare m then Λ m else 0) * Λ n)
+            + 2 * (Λ m * (if IsSquare n then Λ n else 0))) :=
+        Finset.sum_le_sum fun m hm =>
+          le_trans (norm_sum_le _ _)
+            (Finset.sum_le_sum fun n hn => hterm m hm n hn)
+    _ = 4 * (∑ n ∈ Ioc 0 N, (if IsSquare n then Λ n else 0))
+          * (∑ n ∈ Ioc 0 N, Λ n) := by
+        have hinner : ∀ m,
+            ∑ n ∈ Ioc 0 N,
+              (2 * ((if IsSquare m then Λ m else 0) * Λ n)
+                + 2 * (Λ m * (if IsSquare n then Λ n else 0)))
+            = 2 * (if IsSquare m then Λ m else 0) * (∑ n ∈ Ioc 0 N, Λ n)
+              + 2 * Λ m
+                * (∑ n ∈ Ioc 0 N, (if IsSquare n then Λ n else 0)) := by
+          intro m
+          have hpt : ∀ n ∈ Ioc 0 N,
+              2 * ((if IsSquare m then Λ m else 0) * Λ n)
+                + 2 * (Λ m * (if IsSquare n then Λ n else 0))
+              = (2 * (if IsSquare m then Λ m else 0)) * Λ n
+                + (2 * Λ m) * (if IsSquare n then Λ n else 0) :=
+            fun n _ => by ring
+          rw [Finset.sum_congr rfl hpt, Finset.sum_add_distrib,
+            ← Finset.mul_sum, ← Finset.mul_sum]
+        rw [Finset.sum_congr rfl fun m _ => hinner m, Finset.sum_add_distrib,
+          ← Finset.sum_mul, ← Finset.sum_mul, ← Finset.mul_sum, ← Finset.mul_sum]
+        ring
+    _ ≤ 4 * (Real.sqrt N * Real.log N) * ((Real.log 4 + 4) * N) := by
+        have hsl : (0 : ℝ) ≤ Real.sqrt N * Real.log N := by
+          apply mul_nonneg (Real.sqrt_nonneg _)
+          exact Real.log_nonneg (by exact_mod_cast hN)
+        calc 4 * (∑ n ∈ Ioc 0 N, (if IsSquare n then Λ n else 0))
+              * (∑ n ∈ Ioc 0 N, Λ n)
+            ≤ 4 * (Real.sqrt N * Real.log N) * (∑ n ∈ Ioc 0 N, Λ n) := by
+              apply mul_le_mul_of_nonneg_right _ hB0
+              linarith
+          _ ≤ 4 * (Real.sqrt N * Real.log N) * ((Real.log 4 + 4) * N) := by
+              apply mul_le_mul_of_nonneg_left hB
+              linarith
+
 end InformationDepth
 
 #print axioms InformationDepth.C2_diag
@@ -288,3 +506,7 @@ end InformationDepth
 #print axioms InformationDepth.tower_horizon
 #print axioms InformationDepth.rotor_pair_invariant
 #print axioms InformationDepth.parity_diff_support
+#print axioms InformationDepth.isSquare_of_even_grade
+#print axioms InformationDepth.square_vonMangoldt_mass
+#print axioms InformationDepth.vonMangoldt_sum_le
+#print axioms InformationDepth.parity_fingerprint_thin
