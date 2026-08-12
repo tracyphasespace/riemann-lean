@@ -36,6 +36,7 @@ D-H is rejected *at* E₀ (`dh_not_eulerStiffnessC`), so D-H is NOT a
 counterfeit pair member — the pair below passes E₀ by construction.
 -/
 import Factorization
+import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 noncomputable section
 
@@ -161,6 +162,62 @@ theorem counterfeit_pair :
     exact_mod_cast h
   nlinarith [mul_pos hlog2 hlog3]
 
+/-! ## Experiment-1 targets (oracle findings F2–F4, `EXPERIMENT_1_REPORT`)
+
+The numerical run defined four Lean targets; the three elementary ones are
+discharged here. Target 4 — the parity pair's C_Δ-difference is supported
+on the mixed-grade locus {(p^j, q^k) : j + k odd} — is registered open:
+it is the first theorem of the observability stratification. -/
+
+open ArithmeticFunction in
+/-- **Target 1 (rigorous core of finding F3, the stealth counterfeit)**:
+the Liouville rotor is exactly invisible on prime-prime pairs —
+λ(p)·λ(q) = (−1)^Ω(p)·(−1)^Ω(q) = 1 (Ω = cardFactors), so the two-point observable of λΛ
+restricted to prime-prime pairs coincides *identically* with that of Λ.
+The classically dangerous twin hides in the dominant stratum. -/
+theorem liouville_pair_invisible {p q : ℕ} (hp : p.Prime) (hq : q.Prime) :
+    ((((-1 : ℝ) ^ (ArithmeticFunction.cardFactors p) * Λ p : ℝ)) : ℂ)
+      * (starRingEnd ℂ) ((((-1 : ℝ) ^ (ArithmeticFunction.cardFactors q) * Λ q : ℝ)) : ℂ)
+    = ((Λ p : ℝ) : ℂ) * (starRingEnd ℂ) ((Λ q : ℝ) : ℂ) := by
+  simp only [Complex.conj_ofReal]
+  norm_cast
+  rw [ArithmeticFunction.cardFactors_apply_prime hp,
+    ArithmeticFunction.cardFactors_apply_prime hq]
+  norm_num
+
+/-- **Target 2 (tower horizon law, finding F4)**: two distinct powers of
+the same prime are separated by at least log p in the log metric — so
+same-prime pairs enter a bandwidth-Δ window only once Δ ≥ log p: tower
+visibility switches on prime-by-prime. -/
+theorem tower_horizon {p : ℕ} (hp : 2 ≤ p) {j k : ℕ} (hjk : j ≠ k) :
+    Real.log p ≤ |Real.log ((p : ℝ) ^ j) - Real.log ((p : ℝ) ^ k)| := by
+  have hlp : 0 ≤ Real.log p :=
+    Real.log_nonneg (by exact_mod_cast Nat.one_le_of_lt hp)
+  have hz : ((j : ℤ) - k) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hjk)
+  have h1 : (1 : ℝ) ≤ |(j : ℝ) - k| := by exact_mod_cast Int.one_le_abs hz
+  calc Real.log p = 1 * Real.log p := (one_mul _).symm
+    _ ≤ |(j : ℝ) - k| * Real.log p := mul_le_mul_of_nonneg_right h1 hlp
+    _ = |(j : ℝ) - k| * |Real.log p| := by rw [abs_of_nonneg hlp]
+    _ = |((j : ℝ) - k) * Real.log p| := (abs_mul _ _).symm
+    _ = |Real.log ((p : ℝ) ^ j) - Real.log ((p : ℝ) ^ k)| := by
+        rw [Real.log_pow, Real.log_pow, sub_mul]
+
+/-- **Target 3 (general half of finding F2)**: any correlation between
+two coefficients carrying the *same* unimodular rotor is rotor-invariant
+— (u·z)·conj(u·w) = z·conj(w) when ‖u‖ = 1. Hence per-prime constant
+rotors are exactly invisible to within-tower correlations, while
+cross-prime pairs (different rotors) are not: the E_tower ⊊ E_cross
+inclusion's algebraic half. -/
+theorem rotor_pair_invariant {u z w : ℂ} (hu : ‖u‖ = 1) :
+    (u * z) * (starRingEnd ℂ) (u * w) = z * (starRingEnd ℂ) w := by
+  have huu : u * (starRingEnd ℂ) u = 1 := by
+    rw [Complex.mul_conj', hu]
+    norm_num
+  calc (u * z) * (starRingEnd ℂ) (u * w)
+      = (u * (starRingEnd ℂ) u) * (z * (starRingEnd ℂ) w) := by
+        rw [map_mul]; ring
+    _ = z * (starRingEnd ℂ) w := by rw [huu, one_mul]
+
 end InformationDepth
 
 #print axioms InformationDepth.C2_diag
@@ -170,3 +227,6 @@ end InformationDepth
 #print axioms InformationDepth.flip2_modulus_eq
 #print axioms InformationDepth.flip2_eulerStiffnessC
 #print axioms InformationDepth.counterfeit_pair
+#print axioms InformationDepth.liouville_pair_invisible
+#print axioms InformationDepth.tower_horizon
+#print axioms InformationDepth.rotor_pair_invariant
