@@ -2,6 +2,8 @@
 
 **Tracy McSheery, with Claude (Anthropic) — August 12, 2026**
 
+**External readers: start with `Critical_Line_Ledger_Aug2026.md` in this directory — the skeptic-facing version with claims typed, verification commands, and the glossary. This document is the program-internal companion and development record.**
+
 **Status: dictionary and reformulation paper.** This document proves no new analytic theorem. It rebuilds, in the split-signature geometric-algebra language of the Geometry-of-the-Sieve program (McSheery 2026a,b), the unconditional result of
 
 > Claude (Anthropic), *"More than two thirds of the zeros of the Riemann zeta function lie on the critical line,"* August 10, 2026. Paper: `https://www-cdn.anthropic.com/564f962e60643842f5fcb4a17c9dbc8f608f1c37.pdf`. Lean 4 formalization: `https://github.com/anthropics/zeta-23-lean` (sorry-free; axioms `propext`, `Classical.choice`, `Quot.sound` only).
