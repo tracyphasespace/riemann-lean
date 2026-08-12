@@ -114,5 +114,7 @@ numbers hold; its *interpretation* remains typed as conjecture.
 
 Lean targets 1–3 are now kernel-checked in `InformationDepth.lean`
 (`liouville_pair_invisible`, `tower_horizon`, `rotor_pair_invariant`);
-target 4 (mixed-grade support of the parity C_Δ-difference) is
-registered open. Audit: 98 theorems, 98 audited, 0 gaps, 0 sorryAx.
+target 4 is now ALSO kernel-checked: `parity_diff_support`, the exact
+mixed-grade support identity (every even-grade pair contributes zero;
+odd-grade pairs contribute −2Λ(m)Λ(n)K). All four targets discharged.
+Audit: 99 theorems, 99 audited, 0 gaps, 0 sorryAx.

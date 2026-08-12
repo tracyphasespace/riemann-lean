@@ -164,10 +164,9 @@ theorem counterfeit_pair :
 
 /-! ## Experiment-1 targets (oracle findings F2–F4, `EXPERIMENT_1_REPORT`)
 
-The numerical run defined four Lean targets; the three elementary ones are
-discharged here. Target 4 — the parity pair's C_Δ-difference is supported
-on the mixed-grade locus {(p^j, q^k) : j + k odd} — is registered open:
-it is the first theorem of the observability stratification. -/
+The numerical run defined four Lean targets; all four are discharged
+here. Target 4 — `parity_diff_support`, the mixed-grade support theorem —
+is the first theorem of the observability stratification. -/
 
 open ArithmeticFunction in
 /-- **Target 1 (rigorous core of finding F3, the stealth counterfeit)**:
@@ -218,6 +217,64 @@ theorem rotor_pair_invariant {u z w : ℂ} (hu : ‖u‖ = 1) :
         rw [map_mul]; ring
     _ = z * (starRingEnd ℂ) w := by rw [huu, one_mul]
 
+open ArithmeticFunction in
+/-- **Target 4 (the mixed-grade support theorem — finding F3 made exact).**
+The parity pair's pair-energy difference is *identically* a sum over the
+mixed-grade locus: for every kernel K and truncation N,
+
+  PairEnergy(λΛ) − PairEnergy(Λ)
+    = Σ_{m≠n, Ω(m)+Ω(n) odd} (−2·Λ(m)Λ(n)·K(log m − log n)),
+
+so every pair with Ω(m)+Ω(n) even — in particular every prime-prime
+pair, the dominant stratum — contributes *exactly zero* to the
+difference, and on the thin odd locus the contribution is the explicit
+−2Λ(m)Λ(n)K. This is the kernel-checked form of the stealth-counterfeit
+finding: the classically dangerous twin's entire two-point fingerprint
+is confined to mixed grades. (Numerically cross-checked: full difference
+= mixed-grade sum to machine precision at N = 2·10⁴, Δ = 1.) -/
+theorem parity_diff_support (K : ℝ → ℝ) (N : ℕ) :
+    PairEnergy
+        (fun n => (((-1 : ℝ) ^ (ArithmeticFunction.cardFactors n) * Λ n : ℝ) : ℂ))
+        K N
+      - PairEnergy (fun n => ((Λ n : ℝ) : ℂ)) K N
+    = ∑ m ∈ Ioc 0 N, ∑ n ∈ Ioc 0 N,
+        if m ≠ n ∧
+            ¬ Even (ArithmeticFunction.cardFactors m
+              + ArithmeticFunction.cardFactors n)
+        then ((((-2 : ℝ) * (Λ m * Λ n) * K (Real.log m - Real.log n)) : ℝ) : ℂ)
+        else 0 := by
+  unfold PairEnergy C2
+  rw [← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  rw [← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun n _ => ?_
+  by_cases hmn : m = n
+  · subst hmn
+    simp
+  · rw [if_neg hmn, if_neg hmn]
+    simp only [Complex.conj_ofReal]
+    by_cases hev : Even (ArithmeticFunction.cardFactors m
+        + ArithmeticFunction.cardFactors n)
+    · rw [if_neg (fun hc => hc.2 hev)]
+      have hsgnC : ((-1 : ℂ)) ^ (ArithmeticFunction.cardFactors m)
+          * (-1 : ℂ) ^ (ArithmeticFunction.cardFactors n) = 1 := by
+        rw [← pow_add]
+        exact hev.neg_one_pow
+      push_cast
+      linear_combination (((Λ m : ℝ) : ℂ) * ((Λ n : ℝ) : ℂ)
+        * ((K (Real.log m - Real.log n) : ℝ) : ℂ)) * hsgnC
+    · rw [if_pos ⟨hmn, hev⟩]
+      have hodd : Odd (ArithmeticFunction.cardFactors m
+          + ArithmeticFunction.cardFactors n) :=
+        Nat.not_even_iff_odd.mp hev
+      have hsgnC : ((-1 : ℂ)) ^ (ArithmeticFunction.cardFactors m)
+          * (-1 : ℂ) ^ (ArithmeticFunction.cardFactors n) = -1 := by
+        rw [← pow_add]
+        exact hodd.neg_one_pow
+      push_cast
+      linear_combination (((Λ m : ℝ) : ℂ) * ((Λ n : ℝ) : ℂ)
+        * ((K (Real.log m - Real.log n) : ℝ) : ℂ)) * hsgnC
+
 end InformationDepth
 
 #print axioms InformationDepth.C2_diag
@@ -230,3 +287,4 @@ end InformationDepth
 #print axioms InformationDepth.liouville_pair_invisible
 #print axioms InformationDepth.tower_horizon
 #print axioms InformationDepth.rotor_pair_invariant
+#print axioms InformationDepth.parity_diff_support
