@@ -226,6 +226,308 @@ theorem sum_div_sqrt_le_real (hf : EulerStiffness f) {x : ℝ} (hx : 0 ≤ x) :
   have hK : (0 : ℝ) ≤ 2 * (Real.sqrt 2 + 1) := by positivity
   exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hle hC) hK
 
+/-! ## Stage F2b: the equality-grade layer, discretely
+
+[Z23] (5.2)'s second form — the integrated second moment
+Σ f(n)²/n·(log x − log n) = log³x/6 + O(log²x) — is an asymptotic
+*equality*; [Z23] proves it as ∫ M2(t)/t dt. Here it is derived from the
+`mertens_energy` field by **finite Abel summation**: a triangular sum
+swap, telescoping cubes, and two helper sums (harmonic ≤ 1 + log N,
+powered by F1.3's own spacing bound; Σ1/m² ≤ 2). No integrals, no
+measure theory — the same elementary toolkit as F2a. -/
+
+/-- The interface forces `f 1 = 0` (1 is not a prime power). -/
+theorem apply_one (hf : EulerStiffness f) : f 1 = 0 := by
+  by_contra h
+  exact not_isPrimePow_one (hf.support_primePow 1 h)
+
+/-- Harmonic bound Σ_{m ≤ N} 1/m ≤ 1 + log N — by induction, each step paid
+by the F1.3 spacing bound `freq_spacing`. -/
+theorem harmonic_le (N : ℕ) : ∑ m ∈ Ioc 0 N, (1 : ℝ) / m ≤ 1 + Real.log N := by
+  induction N with
+  | zero => simp
+  | succ M ih =>
+      rcases Nat.eq_zero_or_pos M with rfl | hM
+      · simp
+      rw [Finset.sum_Ioc_succ_top (Nat.zero_le _)]
+      have hstep := freq_spacing M hM
+      have hcast : ((M + 1 : ℕ) : ℝ) = (M : ℝ) + 1 := by push_cast; ring
+      rw [hcast]
+      linarith
+
+/-- Σ_{m ≤ N} 1/m² ≤ 2 — finite telescoping. -/
+theorem inv_sq_le (N : ℕ) : ∑ m ∈ Ioc 0 N, (1 : ℝ) / (m : ℝ) ^ 2 ≤ 2 := by
+  have key : ∀ M : ℕ, ∑ m ∈ Ioc 0 (M + 1), (1 : ℝ) / (m : ℝ) ^ 2
+      ≤ 2 - 1 / ((M : ℝ) + 1) := by
+    intro M
+    induction M with
+    | zero => norm_num
+    | succ K ih =>
+        rw [Finset.sum_Ioc_succ_top (Nat.zero_le _)]
+        have hK1 : (0 : ℝ) < (K : ℝ) + 1 := by positivity
+        have hK2 : (0 : ℝ) < (K : ℝ) + 2 := by positivity
+        have hcast : ((K + 1 + 1 : ℕ) : ℝ) = (K : ℝ) + 2 := by push_cast; ring
+        rw [hcast]
+        have htel : 1 / ((K : ℝ) + 2) ^ 2 ≤ 1 / ((K : ℝ) + 1) - 1 / ((K : ℝ) + 2) := by
+          rw [div_sub_div _ _ hK1.ne' hK2.ne',
+            div_le_div_iff₀ (by positivity) (by positivity)]
+          ring_nf
+          nlinarith [sq_nonneg (K : ℝ)]
+        have hgoalcast : ((K + 1 : ℕ) : ℝ) = (K : ℝ) + 1 := by push_cast; ring
+        rw [hgoalcast, show ((K : ℝ) + 1 + 1) = (K : ℝ) + 2 from by ring]
+        linarith
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simp
+  obtain ⟨M, rfl⟩ := Nat.exists_eq_add_of_le hN
+  have := key M
+  have h1 : (0 : ℝ) < 1 / ((M : ℝ) + 1) := by positivity
+  calc ∑ m ∈ Ioc 0 (1 + M), (1 : ℝ) / (m : ℝ) ^ 2
+      = ∑ m ∈ Ioc 0 (M + 1), (1 : ℝ) / (m : ℝ) ^ 2 := by rw [Nat.add_comm]
+    _ ≤ 2 - 1 / ((M : ℝ) + 1) := key M
+    _ ≤ 2 := by linarith
+
+/-- Δ_m = log(m+1) − log m ≤ 1/m. -/
+theorem log_succ_sub_le (m : ℕ) (hm : 1 ≤ m) :
+    Real.log ((m : ℝ) + 1) - Real.log m ≤ 1 / m := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hratio : (0 : ℝ) < ((m : ℝ) + 1) / m := by positivity
+  have h := Real.log_le_sub_one_of_pos hratio
+  have hdiv : Real.log (((m : ℝ) + 1) / m) = Real.log ((m : ℝ) + 1) - Real.log m :=
+    Real.log_div (by positivity) hmR.ne'
+  rw [hdiv] at h
+  have harith : ((m : ℝ) + 1) / m - 1 = 1 / m := by
+    field_simp
+    ring
+  linarith [h, harith.symm.le, harith.le]
+
+/-- Telescoping over `Ico`: Σ_{m∈[a,b)} (F(m+1) − F(m)) = F(b) − F(a). -/
+theorem telescope_Ico (F : ℕ → ℝ) {a b : ℕ} (hab : a ≤ b) :
+    ∑ m ∈ Ico a b, (F (m + 1) - F m) = F b - F a := by
+  rw [Finset.sum_Ico_eq_sum_range]
+  have h := Finset.sum_range_sub (fun i => F (a + i)) (b - a)
+  simp only [← Nat.add_assoc] at h
+  rw [Nat.add_sub_cancel' hab] at h
+  simpa using h
+
+/-- **The finite Abel swap** (triangular exchange): for any coefficients,
+Σ_{n ≤ N} c(n)·(log N − log n) = Σ_{m < N} (Σ_{n ≤ m} c(n))·Δ_m. -/
+theorem abel_swap (c : ℕ → ℝ) (N : ℕ) :
+    ∑ n ∈ Ioc 0 N, c n * (Real.log N - Real.log n)
+      = ∑ m ∈ Ico 1 N, (∑ n ∈ Ioc 0 m, c n)
+          * (Real.log ((m : ℝ) + 1) - Real.log m) := by
+  have htel : ∀ n ∈ Ioc 0 N,
+      Real.log N - Real.log n
+        = ∑ m ∈ Ico n N, (Real.log ((m : ℝ) + 1) - Real.log m) := by
+    intro n hn
+    obtain ⟨_, hnN⟩ := Finset.mem_Ioc.mp hn
+    have h := telescope_Ico (fun k : ℕ => Real.log k) hnN
+    calc Real.log N - Real.log n
+        = ∑ m ∈ Ico n N, (Real.log ((m + 1 : ℕ) : ℝ) - Real.log m) := h.symm
+      _ = ∑ m ∈ Ico n N, (Real.log ((m : ℝ) + 1) - Real.log m) := by
+          refine Finset.sum_congr rfl fun m _ => ?_
+          push_cast
+          ring
+  calc ∑ n ∈ Ioc 0 N, c n * (Real.log N - Real.log n)
+      = ∑ n ∈ Ioc 0 N, ∑ m ∈ Ico n N,
+          c n * (Real.log ((m : ℝ) + 1) - Real.log m) := by
+        refine Finset.sum_congr rfl fun n hn => ?_
+        rw [htel n hn, Finset.mul_sum]
+    _ = ∑ m ∈ Ico 1 N, ∑ n ∈ Ioc 0 m,
+          c n * (Real.log ((m : ℝ) + 1) - Real.log m) := by
+        refine Finset.sum_comm' ?_
+        intro n m
+        simp only [Finset.mem_Ioc, Finset.mem_Ico]
+        omega
+    _ = ∑ m ∈ Ico 1 N, (∑ n ∈ Ioc 0 m, c n)
+          * (Real.log ((m : ℝ) + 1) - Real.log m) := by
+        refine Finset.sum_congr rfl fun m _ => ?_
+        rw [← Finset.sum_mul]
+
+/-- Per-step cube comparison: |½a²Δ − (b³−a³)/6| ≤ ½Δ²·b for 0 ≤ a ≤ b. -/
+theorem cube_step {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) :
+    |a ^ 2 / 2 * (b - a) - (b ^ 3 - a ^ 3) / 6| ≤ (b - a) ^ 2 * b / 2 := by
+  have hid : a ^ 2 / 2 * (b - a) - (b ^ 3 - a ^ 3) / 6
+      = -((b - a) ^ 2 * (2 * a + b) / 6) := by ring
+  have h2ab : (0 : ℝ) ≤ 2 * a + b := by linarith
+  have hnn : (0 : ℝ) ≤ (b - a) ^ 2 * (2 * a + b) / 6 :=
+    div_nonneg (mul_nonneg (sq_nonneg _) h2ab) (by norm_num)
+  rw [hid, abs_neg, abs_of_nonneg hnn]
+  nlinarith [sq_nonneg (b - a)]
+
+/-- Per-step square comparison: aΔ ≤ ½(b² − a²) for a ≤ b. -/
+theorem sq_step {a b : ℝ} (hab : a ≤ b) :
+    a * (b - a) ≤ (b ^ 2 - a ^ 2) / 2 := by
+  nlinarith [sq_nonneg (b - a)]
+
+/-- **F2b (integrated second moment)**: from the `mertens_energy` field,
+Σ_{n ≤ N} f(n)²/n · (log N − log n) = log³N/6 + O(log²N) — [Z23] (5.2)'s
+second form, for any interface-f, by finite Abel summation. -/
+theorem integrated_second_moment (hf : EulerStiffness f) :
+    ∃ C : ℝ, 0 < C ∧ ∀ N : ℕ, 2 ≤ N →
+      |(∑ n ∈ Ioc 0 N, f n ^ 2 / n * (Real.log N - Real.log n))
+        - Real.log N ^ 3 / 6| ≤ C * Real.log N ^ 2 := by
+  obtain ⟨C₀, hC₀, hME⟩ := hf.mertens_energy
+  refine ⟨C₀ / 2 + 3, by positivity, ?_⟩
+  intro N hN
+  have hNR : (0 : ℝ) < N := by positivity
+  have hlogN : (0 : ℝ) < Real.log N := by
+    apply Real.log_pos
+    exact_mod_cast (by omega : 1 < N)
+  have hlog2 : Real.log 2 ≤ Real.log N := by
+    apply Real.log_le_log (by norm_num)
+    exact_mod_cast hN
+  have hl2 : (0.693 : ℝ) < Real.log 2 := by
+    have := Real.log_two_gt_d9
+    linarith
+  -- the swap, with c n = f n²/n
+  rw [abel_swap (fun n => f n ^ 2 / n) N]
+  set Δ : ℕ → ℝ := fun m => Real.log ((m : ℝ) + 1) - Real.log m with hΔ
+  set M2 : ℕ → ℝ := fun m => ∑ n ∈ Ioc 0 m, f n ^ 2 / n with hM2
+  -- Δ facts
+  have hΔnn : ∀ m ∈ Ico 1 N, 0 ≤ Δ m := by
+    intro m hm
+    obtain ⟨hm1, _⟩ := Finset.mem_Ico.mp hm
+    have : (0 : ℝ) < m := by exact_mod_cast hm1
+    have := Real.log_le_log this (by linarith : (m : ℝ) ≤ (m : ℝ) + 1)
+    simpa [hΔ] using sub_nonneg.mpr this
+  have hlogmono : ∀ m ∈ Ico 1 N, Real.log ((m : ℝ) + 1) ≤ Real.log N := by
+    intro m hm
+    obtain ⟨_, hmN⟩ := Finset.mem_Ico.mp hm
+    apply Real.log_le_log (by positivity)
+    have : (m : ℝ) + 1 ≤ N := by exact_mod_cast Nat.succ_le_of_lt hmN
+    linarith
+  -- the error field at integer cutoffs, all m ∈ Ico 1 N
+  have hEm : ∀ m ∈ Ico 1 N, |M2 m - Real.log m ^ 2 / 2| ≤ C₀ * Real.log m := by
+    intro m hm
+    obtain ⟨hm1, _⟩ := Finset.mem_Ico.mp hm
+    rcases Nat.lt_or_ge m 2 with hm2 | hm2
+    · interval_cases m
+      have h1 : M2 1 = 0 := by
+        simp [hM2, apply_one hf]
+      rw [h1]
+      norm_num [Real.log_one]
+    · have h := hME m (by exact_mod_cast hm2)
+      rwa [Nat.floor_natCast] at h
+  -- decompose the swapped sum
+  have hdecomp : ∑ m ∈ Ico 1 N, M2 m * Δ m
+      = (∑ m ∈ Ico 1 N, Real.log m ^ 2 / 2 * Δ m)
+        + ∑ m ∈ Ico 1 N, (M2 m - Real.log m ^ 2 / 2) * Δ m := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun m _ => ?_
+    ring
+  rw [show (∑ m ∈ Ico 1 N, M2 m * Δ m) - Real.log N ^ 3 / 6
+      = ((∑ m ∈ Ico 1 N, Real.log m ^ 2 / 2 * Δ m) - Real.log N ^ 3 / 6)
+        + ∑ m ∈ Ico 1 N, (M2 m - Real.log m ^ 2 / 2) * Δ m by
+    rw [hdecomp]; ring]
+  -- main part: telescoping cubes
+  have hmain : |(∑ m ∈ Ico 1 N, Real.log m ^ 2 / 2 * Δ m) - Real.log N ^ 3 / 6|
+      ≤ (1 + Real.log N) / 2 := by
+    have hcube : Real.log N ^ 3 / 6
+        = ∑ m ∈ Ico 1 N, (Real.log ((m : ℝ) + 1) ^ 3 - Real.log m ^ 3) / 6 := by
+      have h := telescope_Ico (fun k : ℕ => Real.log k ^ 3)
+        (by omega : 1 ≤ N)
+      have h2 : ∑ m ∈ Ico 1 N, (Real.log ((m : ℝ) + 1) ^ 3 - Real.log m ^ 3)
+          = Real.log N ^ 3 - Real.log (1 : ℕ) ^ 3 := by
+        rw [← h]
+        refine Finset.sum_congr rfl fun m _ => ?_
+        push_cast
+        ring
+      rw [← Finset.sum_div, h2]
+      norm_num
+    rw [hcube, ← Finset.sum_sub_distrib]
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hterm : ∀ m ∈ Ico 1 N,
+        |Real.log m ^ 2 / 2 * Δ m
+          - (Real.log ((m : ℝ) + 1) ^ 3 - Real.log m ^ 3) / 6|
+        ≤ 1 / (m : ℝ) / 2 := by
+      intro m hm
+      obtain ⟨hm1, _⟩ := Finset.mem_Ico.mp hm
+      have hmR : (0 : ℝ) < m := by exact_mod_cast hm1
+      have hla : (0 : ℝ) ≤ Real.log m := Real.log_natCast_nonneg m
+      have hlab : Real.log m ≤ Real.log ((m : ℝ) + 1) :=
+        Real.log_le_log hmR (by linarith)
+      have h1 := cube_step hla hlab
+      have hΔm : Δ m ≤ 1 / m := log_succ_sub_le m hm1
+      have hΔmnn : 0 ≤ Δ m := by
+        simpa [hΔ] using sub_nonneg.mpr hlab
+      have hb : Real.log ((m : ℝ) + 1) ≤ (m : ℝ) := by
+        have := Real.log_le_sub_one_of_pos (by positivity : (0:ℝ) < (m : ℝ) + 1)
+        linarith
+      have hchain : (Δ m) ^ 2 * Real.log ((m : ℝ) + 1) / 2 ≤ 1 / (m : ℝ) / 2 := by
+        have h2 : (Δ m) ^ 2 ≤ (1 / (m : ℝ)) ^ 2 := by
+          apply sq_le_sq' (by linarith) hΔm
+        have h3 : (Δ m) ^ 2 * Real.log ((m : ℝ) + 1)
+            ≤ (1 / (m : ℝ)) ^ 2 * (m : ℝ) := by
+          apply mul_le_mul h2 hb
+            (Real.log_nonneg (by linarith)) (by positivity)
+        have h4 : (1 / (m : ℝ)) ^ 2 * (m : ℝ) = 1 / (m : ℝ) := by
+          field_simp
+        linarith [h3, h4.le, h4.ge]
+      calc |Real.log m ^ 2 / 2 * Δ m
+            - (Real.log ((m : ℝ) + 1) ^ 3 - Real.log m ^ 3) / 6|
+          ≤ (Δ m) ^ 2 * Real.log ((m : ℝ) + 1) / 2 := by
+            have h := cube_step hla hlab
+            simpa [hΔ] using h
+        _ ≤ 1 / (m : ℝ) / 2 := hchain
+    refine le_trans (Finset.sum_le_sum hterm) ?_
+    have hsub : ∑ m ∈ Ico 1 N, 1 / (m : ℝ) / 2 ≤ (1 + Real.log N) / 2 := by
+      rw [← Finset.sum_div]
+      gcongr
+      calc ∑ m ∈ Ico 1 N, 1 / (m : ℝ)
+            ≤ ∑ m ∈ Ioc 0 N, (1 : ℝ) / m := by
+              apply Finset.sum_le_sum_of_subset_of_nonneg
+              · intro m hm
+                simp only [Finset.mem_Ico, Finset.mem_Ioc] at hm ⊢
+                omega
+              · intro m _ _
+                positivity
+          _ ≤ 1 + Real.log N := harmonic_le N
+    exact hsub
+  -- error part: |Σ E·Δ| ≤ C₀·½log²N
+  have herr : |∑ m ∈ Ico 1 N, (M2 m - Real.log m ^ 2 / 2) * Δ m|
+      ≤ C₀ * Real.log N ^ 2 / 2 := by
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+    have hterm : ∀ m ∈ Ico 1 N,
+        |(M2 m - Real.log m ^ 2 / 2) * Δ m| ≤ C₀ * (Real.log m * Δ m) := by
+      intro m hm
+      rw [abs_mul, abs_of_nonneg (hΔnn m hm)]
+      have h1 := hEm m hm
+      have h2 := hΔnn m hm
+      calc |M2 m - Real.log m ^ 2 / 2| * Δ m
+          ≤ C₀ * Real.log m * Δ m := by
+            apply mul_le_mul_of_nonneg_right h1 h2
+        _ = C₀ * (Real.log m * Δ m) := by ring
+    refine le_trans (Finset.sum_le_sum hterm) ?_
+    rw [← Finset.mul_sum, mul_div_assoc]
+    apply mul_le_mul_of_nonneg_left _ hC₀.le
+    -- Σ log m · Δ m ≤ ½ log²N by telescoping squares
+    have hsq : ∑ m ∈ Ico 1 N, Real.log m * Δ m
+        ≤ ∑ m ∈ Ico 1 N, (Real.log ((m : ℝ) + 1) ^ 2 - Real.log m ^ 2) / 2 := by
+      refine Finset.sum_le_sum fun m hm => ?_
+      obtain ⟨hm1, _⟩ := Finset.mem_Ico.mp hm
+      have hmR : (0 : ℝ) < m := by exact_mod_cast hm1
+      have hlab : Real.log m ≤ Real.log ((m : ℝ) + 1) :=
+        Real.log_le_log hmR (by linarith)
+      simpa [hΔ] using sq_step hlab
+    refine le_trans hsq ?_
+    have h2 : ∑ m ∈ Ico 1 N, (Real.log ((m : ℝ) + 1) ^ 2 - Real.log m ^ 2)
+        = Real.log N ^ 2 - Real.log (1 : ℕ) ^ 2 := by
+      rw [← telescope_Ico (fun k : ℕ => Real.log k ^ 2) (by omega : 1 ≤ N)]
+      refine Finset.sum_congr rfl fun m _ => ?_
+      push_cast
+      ring
+    rw [← Finset.sum_div, h2]
+    norm_num
+  -- assemble
+  refine le_trans (abs_add_le _ _) ?_
+  have hfinal : (1 + Real.log N) / 2 + C₀ * Real.log N ^ 2 / 2
+      ≤ (C₀ / 2 + 3) * Real.log N ^ 2 := by
+    have h1 : (1 : ℝ) ≤ Real.log N ^ 2 / (Real.log 2) ^ 2 := by
+      rw [le_div_iff₀ (by positivity)]
+      nlinarith [hlog2, hl2, hlogN]
+    nlinarith [hlog2, hl2, hlogN, sq_nonneg (Real.log N)]
+  linarith [hmain, herr, hfinal]
+
 end Factorization
 
 #print axioms Factorization.sum_sq_le
@@ -234,3 +536,12 @@ end Factorization
 #print axioms Factorization.psi_nat_le
 #print axioms Factorization.sum_div_sqrt_le
 #print axioms Factorization.sum_div_sqrt_le_real
+#print axioms Factorization.apply_one
+#print axioms Factorization.harmonic_le
+#print axioms Factorization.inv_sq_le
+#print axioms Factorization.log_succ_sub_le
+#print axioms Factorization.telescope_Ico
+#print axioms Factorization.abel_swap
+#print axioms Factorization.cube_step
+#print axioms Factorization.sq_step
+#print axioms Factorization.integrated_second_moment
