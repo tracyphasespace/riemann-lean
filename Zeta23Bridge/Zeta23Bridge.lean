@@ -545,3 +545,13 @@ end Zeta23Bridge
 #print axioms Zeta23Bridge.dh_logDeriv6_pos
 #print axioms Zeta23Bridge.dh_not_eulerStiffness
 #print axioms Zeta23Bridge.zeta_logDerivAt6
+#print axioms Zeta23Bridge.bivector_commute_ι
+#print axioms Zeta23Bridge.bivector_sq
+#print axioms Zeta23Bridge.hermForm_hypBlock
+#print axioms Zeta23Bridge.hypBlock_isHermitian
+#print axioms Zeta23Bridge.not_isPrimePow_six
+#print axioms Zeta23Bridge.posIndex_congr
+#print axioms Zeta23Bridge.posIndex_sum_le
+#print axioms Zeta23Bridge.rtrace_hypBlock
+#print axioms Zeta23Bridge.ι_anticomm
+#print axioms Zeta23Bridge.ι_anticomm'

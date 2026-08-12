@@ -117,8 +117,7 @@ descent** instead — the top half-block pays (√2/√n)·`chebyshev`, the
 bottom half recurses — no integral, no measure theory, finite sums only.
 The constant 2(√2+1)(log 4 + 4) is worse than [Z23]'s 3 and harmless:
 their Lemma 5.2 remark notes any absolute constant suffices. The proof
-is the program's own collapse operator (companion paper §12, Rung 4):
-iterate "halve and pay" until the sum jams at zero. -/
+iterates "halve and pay" until the sum jams at zero. -/
 
 /-- The interface Chebyshev bound at integer cutoffs. -/
 theorem psi_nat_le (hf : EulerStiffness f) (n : ℕ) :
@@ -655,10 +654,13 @@ theorem sum_mul_log_div_sqrt_le (hf : EulerStiffness f) (n : ℕ) (hn : 1 ≤ n)
 weight `w` squeezed between the sharp cutoffs at `N` (above) and `M`
 (below), the diagonal Σ f(n)²/n·w(n) carries the log³N/6 main term with
 defect controlled by log²N and the taper width (log N − log M)·log²N.
-This is [Z23] Prop 5.6 / §7.1's general-window diagonal — the heart of
-the Frobenius main term — reduced to two applications of F2b.1 plus a
-cube-difference bound. No integrals; the window enters only through the
-sandwich, exactly as in [Z23] (2.16). -/
+This is the **arithmetic diagonal input** to [Z23]'s general-window
+Frobenius asymptotic (Prop 5.6 / §7.1) — not the asymptotic itself —
+reduced to two applications of F2b.1 plus a cube-difference bound. No
+integrals; the window enters only through the sandwich, matching the
+sandwich shape of [Z23] (2.16). The identification of [Z23]'s concrete
+tapered windows with this sandwich class is a correspondence-level claim
+(Factorization.md, precision rule 3). -/
 theorem tapered_diagonal (hf : EulerStiffness f) :
     ∃ C : ℝ, 0 < C ∧ ∀ (N M : ℕ) (w : ℕ → ℝ), 2 ≤ M → M ≤ N →
       (∀ n, 0 ≤ w n) →
@@ -753,3 +755,4 @@ end Factorization
 #print axioms Factorization.dh_not_eulerStiffnessC
 #print axioms Factorization.sum_mul_log_div_sqrt_le
 #print axioms Factorization.tapered_diagonal
+#print axioms Factorization.EulerStiffnessC.apply_six

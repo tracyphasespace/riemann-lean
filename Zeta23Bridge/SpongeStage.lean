@@ -487,3 +487,12 @@ end Stage3
 #print axioms Stage3.log_independence
 #print axioms Stage3.fair_split
 #print axioms Stage3.product_formula
+#print axioms Sponge.embed_add
+#print axioms Sponge.embed_comm
+#print axioms Sponge.embed_injective
+#print axioms Sponge.grade_eq_zero_iff
+#print axioms Sponge.mem_stratum_iff
+#print axioms Sponge.remainder_obstruction
+#print axioms Stage2.shift_comm
+#print axioms Stage2.shift_shift
+#print axioms Stage3.prod_pow_factorization_apply
