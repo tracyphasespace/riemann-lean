@@ -327,3 +327,157 @@ end Stage2
 #print axioms Stage2.half_step
 #print axioms Stage2.log_linearizes
 #print axioms Stage2.sieve_times_tower
+
+/-! ## Stage 3: the Dimensionality Lesson's formal queue (paper §12)
+
+Six targets accumulated by the lesson, all style-law-compliant: the
+numerals and inverses appear only in lemmas, as shadows. -/
+
+namespace Stage3
+
+open Sponge
+
+/-! ### 1. The collapse fixed point (Rung 4: iterated descent jams at the core) -/
+
+/-- Iterated exact descent terminates outside the stratum: the `p`-free
+core (`ordCompl`) has a remainder — the collapse's fixed point. -/
+theorem collapse_not_mem_stratum {p : ℕ} (hp : p.Prime) {n : ℕ} (hn : n ≠ 0) :
+    ordCompl[p] n ∉ stratum p := by
+  rw [mem_stratum_iff]
+  exact Nat.not_dvd_ordCompl hp hn
+
+/-- The collapse remembers what it stripped: the doll reassembles from its
+tower height and its core (`n = p^{v_p(n)} · core`). -/
+theorem collapse_reconstruct (p n : ℕ) :
+    embed (p ^ n.factorization p) (ordCompl[p] n) = n :=
+  Nat.ordProj_mul_ordCompl_eq_self n p
+
+/-! ### 2. The full cascade retracts to the unit (Rung 3: the limit point) -/
+
+/-- An integer surviving **every** prime's sieve is the unit: the
+intersection of all stratum-complements is `{1}` — the sponge's limit
+point. (Euclid: every `n ≠ 1` has a prime divisor.) -/
+theorem cascade_limit {n : ℕ} (h : ∀ p, p.Prime → n ∉ stratum p) : n = 1 := by
+  by_contra h1
+  obtain ⟨p, hp, hpn⟩ := Nat.exists_prime_and_dvd h1
+  exact h p hp (mem_stratum_iff.mpr hpn)
+
+/-! ### 3. The real-rotor telescope (style-law clause 2: de-ℂ-ing the Haar projector) -/
+
+/-- The telescope, in any ring: the sieve factor `(1 − R)` times the tower
+sum is `1 − R^p`. No commutativity, no ℂ, no fractions. -/
+theorem rotor_telescope {A : Type*} [Ring A] (R : A) (p : ℕ) :
+    (1 - R) * ∑ k ∈ Finset.range p, R ^ k = 1 - R ^ p := by
+  induction p with
+  | zero => simp
+  | succ m ih =>
+      rw [Finset.sum_range_succ, mul_add, ih, sub_mul, one_mul, ← pow_succ']
+      abel
+
+/-- **The ℂ-free Haar annihilation**: a rotor of order `p` (any real
+rotation matrix with `R^p = 1`, any ring element) has its tower sum
+annihilated by the sieve factor. For a nontrivial rotation `1 − R` is
+invertible, forcing `Σ R^k = 0` — Dirichlet orthogonality with no
+imaginary unit. The `R = 1` case gives `Σ = p·1`: the group order, the
+inverse Haar weight, on the shadow side. -/
+theorem rotor_haar_annihilate {A : Type*} [Ring A] {R : A} {p : ℕ}
+    (hRp : R ^ p = 1) :
+    (1 - R) * ∑ k ∈ Finset.range p, R ^ k = 0 := by
+  rw [rotor_telescope, hRp, sub_self]
+
+theorem rotor_haar_identity {A : Type*} [Ring A] (p : ℕ) :
+    ∑ k ∈ Finset.range p, (1 : A) ^ k = (p : A) := by
+  simp [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+
+/-! ### 4. The sponge's aperiodicity (Rung 6: `log_independence`) -/
+
+/-- Factorization of a product of distinct prime powers, read at a member
+prime: the coordinate comes back out. -/
+lemma prod_pow_factorization_apply {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime)
+    (a : ℕ → ℕ) {q : ℕ} (hq : q ∈ P) :
+    (∏ p ∈ P, p ^ a p).factorization q = a q := by
+  rw [Nat.factorization_prod (fun p hp => pow_ne_zero _ (hP p hp).pos.ne')]
+  rw [Finset.sum_apply']
+  rw [Finset.sum_eq_single_of_mem q hq]
+  · rw [(hP q hq).factorization_pow, Finsupp.single_eq_same]
+  · intro p hp hpq
+    rw [(hP p hp).factorization_pow]
+    simp [Finsupp.single_apply, hpq]
+
+/-- **The sponge is aperiodic** (Kronecker–Weyl input; Rung 6): the
+`{log p}` are rationally independent, because a relation
+`Σ aₚ·log p = Σ bₚ·log p` exponentiates to an equality of two prime-power
+products, and unique factorization reads off `aₚ = bₚ`. The joint winding
+never folds; the imaginary plane's shared circle has no license. -/
+theorem log_independence {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime) (a b : ℕ → ℕ)
+    (h : ∑ p ∈ P, (a p : ℝ) * Real.log p = ∑ p ∈ P, (b p : ℝ) * Real.log p) :
+    ∀ q ∈ P, a q = b q := by
+  intro q hq
+  set X := ∏ p ∈ P, p ^ a p with hX
+  set Y := ∏ p ∈ P, p ^ b p with hY
+  have hXpos : 0 < X := Finset.prod_pos fun p hp => pow_pos (hP p hp).pos _
+  have hYpos : 0 < Y := Finset.prod_pos fun p hp => pow_pos (hP p hp).pos _
+  have hlog : ∀ (c : ℕ → ℕ), Real.log (∏ p ∈ P, p ^ c p : ℕ) =
+      ∑ p ∈ P, (c p : ℝ) * Real.log p := by
+    intro c
+    push_cast
+    rw [Real.log_prod (fun p hp =>
+      pow_ne_zero _ (Nat.cast_ne_zero.mpr (hP p hp).pos.ne'))]
+    exact Finset.sum_congr rfl fun p _ => Real.log_pow _ _
+  have hXY : Real.log (X : ℝ) = Real.log (Y : ℝ) := by
+    rw [hX, hY, hlog a, hlog b]
+    exact h
+  have hXYeq : X = Y := by
+    have := Real.log_injOn_pos
+      (Set.mem_Ioi.mpr (by exact_mod_cast hXpos))
+      (Set.mem_Ioi.mpr (by exact_mod_cast hYpos)) hXY
+    exact_mod_cast this
+  have hfa := prod_pow_factorization_apply hP a hq
+  have hfb := prod_pow_factorization_apply hP b hq
+  rw [← hX] at hfa
+  rw [← hY] at hfb
+  rw [← hfa, ← hfb, hXYeq]
+
+/-! ### 5. The fair-split ordering identity (Rung 2: [∂, x] = 1) -/
+
+/-- The two orderings of coordinate-times-derivation, summed: their total
+is `2·(x∂) + 1` — the canonical commutator `[∂, x] = 1` in fair-split
+form, with the `1` on the shadow side. Halving (a shadow act) yields the
+symmetrized dilation `x∂ + ½`, the Berry–Keating generator whose modes
+are the critical line; the `½` is never written here. -/
+theorem fair_split {f : ℝ → ℝ} {x : ℝ} (hf : DifferentiableAt ℝ f x) :
+    x * deriv f x + deriv (fun y => y * f y) x
+      = 2 * (x * deriv f x) + f x := by
+  have h : deriv (fun y => y * f y) x = 1 * f x + x * deriv f x :=
+    ((hasDerivAt_id' x).mul hf.hasDerivAt).deriv
+  rw [h]
+  ring
+
+/-! ### 6. The product-formula cell (Rung 7: Artin–Whaples) -/
+
+/-- **The product formula, one cell** (Rung 7): the archimedean size of an
+integer times the product of its inverse coordinate-powers is `1` — the
+archimedean integers as the joint inverse of the `1/prime` norms
+(`|n|_p = p^{−v_p(n)}`; Artin–Whaples). The inverses appear only here, in
+the lemma, as shadows of the coordinates of `reconstruction`. -/
+theorem product_formula {n : ℕ} (hn : n ≠ 0) :
+    (n : ℝ) * ∏ p ∈ n.primeFactors, ((p : ℝ) ^ n.factorization p)⁻¹ = 1 := by
+  rw [Finset.prod_inv_distrib]
+  have hprod : ∏ p ∈ n.primeFactors, ((p : ℝ) ^ n.factorization p)
+      = ((∏ p ∈ n.primeFactors, p ^ n.factorization p : ℕ) : ℝ) := by
+    push_cast
+    rfl
+  have hrec : (∏ p ∈ n.primeFactors, p ^ n.factorization p : ℕ) = n := by
+    rw [← Nat.support_factorization]
+    exact Nat.prod_factorization_pow_eq_self hn
+  rw [hprod, hrec]
+  exact mul_inv_cancel₀ (Nat.cast_ne_zero.mpr hn)
+
+end Stage3
+
+#print axioms Stage3.collapse_reconstruct
+#print axioms Stage3.cascade_limit
+#print axioms Stage3.rotor_haar_annihilate
+#print axioms Stage3.log_independence
+#print axioms Stage3.fair_split
+#print axioms Stage3.product_formula
