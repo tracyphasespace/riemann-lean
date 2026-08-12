@@ -1,8 +1,7 @@
 # DRAFT — issue/discussion post for `anthropics/zeta-23-lean`
 
-**Status: draft for Tracy's review. Not posted. Post as a GitHub Discussion
-(preferred if enabled) or an issue; tone is informational, asks for nothing
-except a heads-up channel on retags.**
+**Status: POSTED 2026-08-12 as https://github.com/anthropics/zeta-23-lean/issues/9
+(discussions disabled upstream, so filed as an issue). Text below is as posted.**
 
 ---
 
