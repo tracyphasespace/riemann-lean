@@ -12,3 +12,6 @@ rev = "v1.0"
 
 [[lean_lib]]
 name = "Zeta23Bridge"
+
+[[lean_lib]]
+name = "SpongeStage"

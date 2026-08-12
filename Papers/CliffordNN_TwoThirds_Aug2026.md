@@ -206,6 +206,30 @@ Concrete program (the honest continuation of this paper):
 
 Until step 3 produces something, the fractal-object view remains a promissory note and this paper's dictionary remains what it honestly says it is: a translation of a theorem that was found, and can be fully stated, in the function frame.
 
+## 11. SpongeStage, Stage 1: the sponge as an object, under the style-law (Aug 12, night)
+
+Step 1 of §10 is now real code: `Zeta23Bridge/SpongeStage.lean` — kernel-checked (standard axioms only, no `sorry`) under the **style-law**:
+
+> The literal fractions `1/2`, `1/p`, `1 − 1/p`, `∏(1 − 1/p)` do not appear in any definition. Definitions carry maps — embeddings, descents, gradings, group averages, coordinates. Numerals appear only in lemmas, as shadows (cardinalities, floored divisions, totients, Haar weights). If a definition needs the numeral, the definition is wrongly typed.
+
+The sponge's intuitions, their classical owners, and their Lean names — the author supplies the structure, the dead mathematicians supply the rigor:
+
+| Sponge intuition (McSheery) | Classical owner | Lean theorem |
+|---|---|---|
+| Each prime drills a new orthogonal hole; the stratum is a scaled copy of everything | Dedekind (infinite = self-similar); the stratum defined as the **image of a map**, not a predicate | `embed`, `stratum`, `embed_add`, `embed_comm` |
+| "If there is any remainder, it wasn't an even integer" (for every prime) | Gauss, *Disquisitiones*: congruences; the remainder typed as a **group element** of `ZMod p`, never a numeral | `remainder_obstruction`, `grade`, `grade_eq_zero_iff` |
+| The doll tower; nesting by construction; "available contraction" | Kummer, Hensel: the p-adic valuation as **exact-descent count** | `tower`, `tower_nested`, `descent_count` |
+| The cells close; prime axes are independent | Gauss: Chinese Remainder Theorem, in image form: `stratum p ∩ stratum q = stratum (p·q)` | `orthogonality` |
+| "Whole numbers expressed by fractions" — the generative act | Euclid IX.14 / Gauss: ℕ⁺ **is** the free commutative monoid on the primes; multiplication of integers = **addition of coordinate vectors** | `coordinates`, `coordinates_add`, `reconstruction` |
+| "1/p is an operator, not a fraction" | Dirichlet: character orthogonality; the scalar in the lemma is the **group order** (inverse Haar weight), by way of an abstract primitive root — no fraction anywhere | `charSum`, `haar_projector` |
+| The sponge's surviving volume | Euler, Legendre: on one CRT period the survivor count **is** `∏(p−1)` — a totient, the trace of the sieve idempotent; Mertens' `∏(1−1/p)` is its shadow | `volume_shadow` |
+| Density of a stratum | floored division `n / p` — even the shadow keeps the remainder discipline (the remainder is dropped, not divided) | `density_shadow` |
+| Even/odd chirality; the ½(1+S) projector; the Clifford even grade | Dirichlet's parity character; the grade involution — the `2` appears in the lemma as the group order | `parity_projector` |
+
+Two things worth recording about what the style-law *did* during construction. First, it forced the stratum to be defined as `Set.range (embed p)` — the image of the factory — with divisibility demoted to a lemma (`mem_stratum_iff`): the doll is made, not recognized. Second, it turned out that even the shadows keep structure when typed honestly: the density shadow is the *floored* division `n / p` (ℕ-division — remainder dropped, not divided), and the volume shadow is the integer `∏(p−1)` (a totient), so the familiar fractions `1/p` and `∏(1−1/p)` never appear even in the lemmas — they would only arise at the final, deliberate act of decategorification into ℝ, which Stage 1 declines to perform.
+
+**Stage 2 (next):** the energy variable `Q = r²` with `d/dQ` as structural descent-by-2 (Laplacian → Dirac → the Clifford necessity; Γ(s/2) as the object's radial measure); the log-linearization `T_{log p}` as unitary shifts (the resolvent reading of the Euler factor); the spectral-dimension shadow `D_s = 1/2` as a theorem about the object. **Stage 3:** the native test of §10 — re-derive one zero-side statement inside the sponge frame, with the D-H control standing guard (its sponge must fail to close at the 6-cell; `dh_not_eulerStiffness` is the algebraic shadow of that failure).
+
 ---
 
 ## References

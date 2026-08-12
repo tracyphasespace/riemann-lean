@@ -41,6 +41,23 @@ pairs, with arbitrary shadow maps. What design alone cannot supply is the census
 how many dolls there are — and that is exactly the part [Z23] buys with the two
 prime-side trace moments (bandwidth ≤ 1, unconditional), landing at 2/3.
 
+## SpongeStage.lean — Stage 1 of the sponge-as-object formalization
+
+Companion module (own `lean_lib`, imports Mathlib only) realizing the style-law
+of the companion paper §10–11: **no literal `1/2` or `1/p` in any definition** —
+definitions carry maps (self-embeddings, descents, `ZMod` gradings, character
+averages, valuation coordinates); numerals appear only in lemmas as shadows
+(floored divisions, totients, group orders). Nine kernel-checked results:
+`embed`/`stratum` (Dedekind self-embedding; stratum = image of the map),
+`remainder_obstruction` + `grade_eq_zero_iff` (Gauss congruence grading),
+`tower_nested` + `descent_count` (Kummer/Hensel valuation as exact-descent count),
+`orthogonality` (CRT in image form), `coordinates_add` + `reconstruction`
+(ℕ⁺ = free commutative monoid on primes), `haar_projector` (Dirichlet: the
+1/p-average with the group order in the lemma), `density_shadow` (count = `n / p`,
+floored), `volume_shadow` (totient of a primorial = `∏(p−1)`), `parity_projector`
+(the ½(1+S) projector with the 2 derived). See paper §11 for the full
+intuition → classical-owner → Lean dictionary.
+
 ## Reproduce
 
 ```bash
