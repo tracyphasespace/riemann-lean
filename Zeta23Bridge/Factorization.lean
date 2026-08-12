@@ -612,6 +612,121 @@ theorem dh_not_eulerStiffnessC {f L : ℕ → ℝ} (κ : ℝ)
   have h6R : L 6 = 0 := by exact_mod_cast h6
   exact absurd h6R (ne_of_gt (dh_logDeriv6_pos κ hf2 hf3 hf6 h))
 
+/-! ## Stage F4a: arithmetic closure of the prime side
+
+The remaining coefficient-consuming touchpoints of [Z23] §5, covered:
+the **tapered diagonal main term** (Prop 5.6 for general windows — the
+heart of tr G̃²) via a sandwich reduction to F2b.1, and the log-weighted
+√-moment. With these, *every* step of [Z23] §5 that reads coefficients
+routes through an interface-derived theorem; what remains of §5 is
+coefficient-free window/archimedean analysis ([Z23] §7.1: "Nothing in
+Sections 4–5 used that φ is flat-topped, only [window properties]"). -/
+
+/-- Log-weighted √-moment: Σ f(k)·log k/√k ≤ log n · (F2a bound) —
+covers the log-weighted variant of [Z23] Lemma 5.1. -/
+theorem sum_mul_log_div_sqrt_le (hf : EulerStiffness f) (n : ℕ) (hn : 1 ≤ n) :
+    ∑ k ∈ Ioc 0 n, f k * Real.log k / Real.sqrt k
+      ≤ Real.log n * (2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt n)) := by
+  have hstep : ∀ k ∈ Ioc 0 n, f k * Real.log k / Real.sqrt k
+      ≤ Real.log n * (f k / Real.sqrt k) := by
+    intro k hk
+    obtain ⟨hk1, hkn⟩ := Finset.mem_Ioc.mp hk
+    have hkR : (0 : ℝ) < k := by exact_mod_cast hk1
+    have hlogk : Real.log k ≤ Real.log n :=
+      Real.log_le_log hkR (by exact_mod_cast hkn)
+    have hsk : (0 : ℝ) < Real.sqrt k :=
+      Real.sqrt_pos.mpr hkR
+    have h1 : f k * Real.log k ≤ f k * Real.log n :=
+      mul_le_mul_of_nonneg_left hlogk (hf.nonneg k)
+    calc f k * Real.log k / Real.sqrt k
+        ≤ f k * Real.log n / Real.sqrt k :=
+          (div_le_div_iff_of_pos_right hsk).mpr h1
+      _ = Real.log n * (f k / Real.sqrt k) := by ring
+  calc ∑ k ∈ Ioc 0 n, f k * Real.log k / Real.sqrt k
+      ≤ ∑ k ∈ Ioc 0 n, Real.log n * (f k / Real.sqrt k) :=
+        Finset.sum_le_sum hstep
+    _ = Real.log n * ∑ k ∈ Ioc 0 n, f k / Real.sqrt k := by
+        rw [Finset.mul_sum]
+    _ ≤ Real.log n * (2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt n)) := by
+        apply mul_le_mul_of_nonneg_left (sum_div_sqrt_le hf n)
+        exact Real.log_nonneg (by exact_mod_cast hn)
+
+/-- **F4a (the tapered diagonal main term, by sandwich)**: for any window
+weight `w` squeezed between the sharp cutoffs at `N` (above) and `M`
+(below), the diagonal Σ f(n)²/n·w(n) carries the log³N/6 main term with
+defect controlled by log²N and the taper width (log N − log M)·log²N.
+This is [Z23] Prop 5.6 / §7.1's general-window diagonal — the heart of
+the Frobenius main term — reduced to two applications of F2b.1 plus a
+cube-difference bound. No integrals; the window enters only through the
+sandwich, exactly as in [Z23] (2.16). -/
+theorem tapered_diagonal (hf : EulerStiffness f) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (N M : ℕ) (w : ℕ → ℝ), 2 ≤ M → M ≤ N →
+      (∀ n, 0 ≤ w n) →
+      (∀ n ∈ Ioc 0 N, w n ≤ Real.log N - Real.log n) →
+      (∀ n ∈ Ioc 0 M, Real.log M - Real.log n ≤ w n) →
+      |(∑ n ∈ Ioc 0 N, f n ^ 2 / n * w n) - Real.log N ^ 3 / 6|
+        ≤ C * Real.log N ^ 2
+          + (Real.log N - Real.log M) * Real.log N ^ 2 := by
+  obtain ⟨C, hC, hI⟩ := integrated_second_moment hf
+  refine ⟨C, hC, ?_⟩
+  intro N M w hM2 hMN hw0 hwU hwL
+  have hN2 : 2 ≤ N := le_trans hM2 hMN
+  have hMR : (0 : ℝ) < M := by positivity
+  have hlogM : (0 : ℝ) < Real.log M := by
+    apply Real.log_pos
+    exact_mod_cast (by omega : 1 < M)
+  have hlogN : (0 : ℝ) < Real.log N := by
+    apply Real.log_pos
+    exact_mod_cast (by omega : 1 < N)
+  have hlogMN : Real.log M ≤ Real.log N :=
+    Real.log_le_log hMR (by exact_mod_cast hMN)
+  have hterm_nn : ∀ n ∈ Ioc 0 N, (0 : ℝ) ≤ f n ^ 2 / n := by
+    intro n hn
+    positivity
+  -- upper: replace w by the sharp cutoff at N
+  have hupper : ∑ n ∈ Ioc 0 N, f n ^ 2 / n * w n
+      ≤ ∑ n ∈ Ioc 0 N, f n ^ 2 / n * (Real.log N - Real.log n) := by
+    refine Finset.sum_le_sum fun n hn => ?_
+    exact mul_le_mul_of_nonneg_left (hwU n hn) (hterm_nn n hn)
+  -- lower: restrict to Ioc 0 M and use the sharp cutoff at M
+  have hlower : ∑ n ∈ Ioc 0 M, f n ^ 2 / n * (Real.log M - Real.log n)
+      ≤ ∑ n ∈ Ioc 0 N, f n ^ 2 / n * w n := by
+    calc ∑ n ∈ Ioc 0 M, f n ^ 2 / n * (Real.log M - Real.log n)
+        ≤ ∑ n ∈ Ioc 0 M, f n ^ 2 / n * w n := by
+          refine Finset.sum_le_sum fun n hn => ?_
+          refine mul_le_mul_of_nonneg_left (hwL n hn) ?_
+          positivity
+      _ ≤ ∑ n ∈ Ioc 0 N, f n ^ 2 / n * w n := by
+          refine Finset.sum_le_sum_of_subset_of_nonneg
+            (Finset.Ioc_subset_Ioc le_rfl hMN) ?_
+          intro n hn _
+          have := hw0 n
+          positivity
+  have hIN := hI N hN2
+  have hIM := hI M hM2
+  -- cube difference: log³N − log³M ≤ 3(log N − log M)·log²N
+  have hcube : Real.log N ^ 3 - Real.log M ^ 3
+      ≤ 3 * ((Real.log N - Real.log M) * Real.log N ^ 2) := by
+    nlinarith [sq_nonneg (Real.log N - Real.log M), hlogM.le, hlogMN,
+      sq_nonneg (Real.log M), mul_nonneg hlogM.le hlogN.le]
+  rw [abs_le]
+  constructor
+  · -- lower bound on the sum
+    have h1 : Real.log M ^ 3 / 6 - C * Real.log M ^ 2
+        ≤ ∑ n ∈ Ioc 0 M, f n ^ 2 / n * (Real.log M - Real.log n) := by
+      have := abs_le.mp hIM
+      linarith [this.1]
+    have h2 : C * Real.log M ^ 2 ≤ C * Real.log N ^ 2 := by
+      apply mul_le_mul_of_nonneg_left _ hC.le
+      nlinarith [hlogM.le, hlogMN]
+    nlinarith [h1, hlower, h2, hcube]
+  · -- upper bound on the sum
+    have := abs_le.mp hIN
+    have h3 : (0 : ℝ) ≤ (Real.log N - Real.log M) * Real.log N ^ 2 := by
+      apply mul_nonneg _ (sq_nonneg _)
+      linarith
+    linarith [this.2, hupper]
+
 end Factorization
 
 #print axioms Factorization.sum_sq_le
@@ -636,3 +751,5 @@ end Factorization
 #print axioms Factorization.sum_norm_div_sqrt_le
 #print axioms Factorization.integrated_second_momentC
 #print axioms Factorization.dh_not_eulerStiffnessC
+#print axioms Factorization.sum_mul_log_div_sqrt_le
+#print axioms Factorization.tapered_diagonal
