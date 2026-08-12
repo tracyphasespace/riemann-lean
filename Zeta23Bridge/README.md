@@ -20,6 +20,7 @@ companion paper's dictionary from interpretive prose to kernel-checked mathemati
 | `posIndex_hypBlock`, `negIndex_hypBlock` | The off-line-pair block `!![0, μ; μ, 0]` has signature `(1,1)` | Witt's hyperbolic plane: one positive strut refunded, one negative direction — the matrix shadow of the boost bivector |
 | `strut_hyperbolic_shadow_bound` | `G = P + Σᵢ Bᵢᴴ·hypBlock(μᵢ)·Bᵢ` with `P ⪰ 0`, `rank P ≤ s` ⟹ `n₊(G) ≤ s + p` | **The outward-bivector principle, population form**: a shadow can fold curvature but cannot manufacture positive directions; each hyperbolic plane refunds at most one |
 | `shadow_posIndex_le` | re-export of `RHLinalg.posIndex_conj_le` | Shadow monotonicity of inertia — the survivor of the B.6 spiral objection |
+| `EulerStiffness` + `eulerStiffness_vonMangoldt` | Prop-structure packaging the Euler product's quantitative shadow (prime-power support, `Λ(n) ≤ log n`, Mertens energy `½log²x`, Chebyshev), with the ζ instance **proved** from Mathlib + `Zeta23.Cheb` | "Geometric Stiffness" as a typeclass: the constraint a `charOp` must carry, and the instance Davenport–Heilbronn cannot construct (negative-control witness target: a nonzero log-derivative coefficient at n = 6) |
 
 `strut_hyperbolic_shadow_bound` is the abstract content of [Z23] Proposition 4.1 —
 the zero-side inequality feeding the 2/3 theorem — rebuilt from the Sieve

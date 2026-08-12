@@ -36,6 +36,7 @@ Correspondence to the Sieve program's own Lean modules
   * O3′ pointwise convexity — no analogue here; deliberately absent.
 -/
 import Zeta23.LinAlg.Inertia
+import Zeta23.Chebyshev
 import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
 
 noncomputable section
@@ -351,6 +352,62 @@ theorem shadow_posIndex_le {m d : Type*} [Fintype m] [DecidableEq m]
 
 end Shadow
 
+/-! ## Layer 4: Euler stiffness — injecting the Euler product as a typeclass
+
+"Whole numbers expressed by fractions": the Euler product
+`∑ₙ n⁻ˢ = ∏ₚ (1 − p⁻ˢ)⁻¹` writes the full Dirichlet series over ℕ as a
+product of one geometric-series "fraction" per prime; unique factorization
+is exactly the statement that expanding the product lists every whole
+number once. Taking `−log` splits the product into independent prime terms
+(the orthogonal rotors), and differentiating gives `−ζ'/ζ = ∑ Λ(n) n⁻ˢ`
+with `Λ` supported **only on prime powers** and bounded by `log n`. That
+sparse, log-weighted support — plus its Mertens second moment — is the
+entire "geometric stiffness" the [Z23] certificate consumes. A function
+like Davenport–Heilbronn, built as a *sum* of L-functions, has no product:
+its log-derivative coefficients spill onto non-prime-powers (n = 6, 10, …)
+and, because it has zeros in σ > 1, grow like a power of n — the budget
+`∑ |c(n)|²/n` then blows up like `x^{1+δ}` and no certificate exists
+([Z23] Remark 7.2(iii); Sieve program §B.8).
+
+`EulerStiffness` packages exactly these consequences as a Prop-valued
+structure. Downstream operator theorems (`charOp`-style constructions)
+should take it as a hypothesis/instance: the ζ instance is *proved* below
+from Mathlib + `Zeta23.Cheb`; for Davenport–Heilbronn the instance is not
+constructible — the formal negative-control witness being a nonzero
+log-derivative coefficient off the prime-power skeleton (e.g. at n = 6). -/
+
+section EulerStiffness
+
+open ArithmeticFunction Finset
+
+/-- The quantitative shadow of the Euler product: everything the stiffness
+argument consumes about a system's log-derivative coefficients `f`.
+Fields 1–2 are the fingerprint of the product (sparse prime-power support,
+coherent log-size weights: "whole numbers from fractions"); fields 3–4 are
+the Chebyshev–Mertens budget that makes the [Z23] second moment finite. -/
+structure EulerStiffness (f : ℕ → ℝ) : Prop where
+  support_primePow : ∀ n, f n ≠ 0 → IsPrimePow n
+  nonneg : ∀ n, 0 ≤ f n
+  log_size : ∀ n, f n ≤ Real.log n
+  mertens_energy : ∃ C : ℝ, 0 < C ∧ ∀ x : ℝ, 2 ≤ x →
+    |(∑ n ∈ Ioc 0 ⌊x⌋₊, f n ^ 2 / n) - Real.log x ^ 2 / 2| ≤ C * Real.log x
+  chebyshev : ∀ x : ℝ, 0 ≤ x →
+    ∑ n ∈ Ioc 0 ⌊x⌋₊, f n ≤ (Real.log 4 + 4) * x
+
+/-- **ζ has Euler stiffness**: the von Mangoldt function satisfies all four
+constraints. This is the instance a `charOp` built from ζ's primes can
+supply, and the one Davenport–Heilbronn cannot. -/
+theorem eulerStiffness_vonMangoldt : EulerStiffness (fun n => Λ n) where
+  support_primePow := fun n h => by
+    by_contra hn
+    exact h (ArithmeticFunction.vonMangoldt_eq_zero_iff.mpr hn)
+  nonneg := fun n => ArithmeticFunction.vonMangoldt_nonneg
+  log_size := fun n => ArithmeticFunction.vonMangoldt_le_log
+  mertens_energy := Zeta23.Cheb.sum_vonMangoldt_sq_div_eq
+  chebyshev := fun x hx => Zeta23.Cheb.sum_vonMangoldt_le hx
+
+end EulerStiffness
+
 end Zeta23Bridge
 
 #print axioms Zeta23Bridge.bivector_commute
@@ -358,3 +415,4 @@ end Zeta23Bridge
 #print axioms Zeta23Bridge.posIndex_hypBlock
 #print axioms Zeta23Bridge.negIndex_hypBlock
 #print axioms Zeta23Bridge.strut_hyperbolic_shadow_bound
+#print axioms Zeta23Bridge.eulerStiffness_vonMangoldt
