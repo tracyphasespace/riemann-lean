@@ -729,6 +729,81 @@ theorem tapered_diagonal (hf : EulerStiffness f) :
       linarith
     linarith [this.2, hupper]
 
+/-! ## Stage F3b (general part): defect stability and masked twists
+
+The true Dirichlet instance Λ(n)χ(n) is sub-unimodular: χ vanishes at
+p ∣ q. By phase-blindness (F3) its modulus is just Λ *masked* to the
+coprime support — so the instance reduces to: (i) a general **defect
+stability** theorem — removing boundedly much energy from an interface
+system preserves the interface; (ii) a **masked twist** gluing for
+selectors with values {0} ∪ {unimodular}; and (iii) the concrete
+bad-prime energy bound Σ_{p ∣ q} Σ_k log²p/p^k ≤ D_q — the only genuinely
+arithmetic remainder, open as F3b-instance. -/
+
+/-- **Defect stability**: pointwise-dominated systems with boundedly much
+removed energy inherit the interface. The removed-energy hypothesis is
+the only new input; all five fields transfer. -/
+theorem defect_stability (hf : EulerStiffness f) (f' : ℕ → ℝ)
+    (h0 : ∀ n, 0 ≤ f' n) (hle : ∀ n, f' n ≤ f n)
+    {D : ℝ} (hD0 : 0 ≤ D)
+    (hD : ∀ x : ℝ, 2 ≤ x →
+      ∑ n ∈ Ioc 0 ⌊x⌋₊, (f n ^ 2 - f' n ^ 2) / n ≤ D) :
+    EulerStiffness f' where
+  support_primePow := fun n hn =>
+    hf.support_primePow n fun h => hn (le_antisymm (h ▸ hle n) (h0 n))
+  nonneg := h0
+  log_size := fun n => le_trans (hle n) (hf.log_size n)
+  chebyshev := fun x hx =>
+    le_trans (Finset.sum_le_sum fun n _ => hle n) (hf.chebyshev x hx)
+  mertens_energy := by
+    obtain ⟨C₀, hC₀, hM⟩ := hf.mertens_energy
+    refine ⟨C₀ + 2 * D + 1, by positivity, fun x hx => ?_⟩
+    have hM' := abs_le.mp (hM x hx)
+    have hDx := hD x hx
+    have hDnn : (0 : ℝ) ≤ ∑ n ∈ Ioc 0 ⌊x⌋₊, (f n ^ 2 - f' n ^ 2) / n := by
+      refine Finset.sum_nonneg fun n _ => ?_
+      have h1 := h0 n
+      have h2 := hle n
+      have hsq : f' n ^ 2 ≤ f n ^ 2 := by nlinarith
+      exact div_nonneg (by linarith) (Nat.cast_nonneg n)
+    have hsplit : ∑ n ∈ Ioc 0 ⌊x⌋₊, f' n ^ 2 / n
+        = (∑ n ∈ Ioc 0 ⌊x⌋₊, f n ^ 2 / n)
+          - ∑ n ∈ Ioc 0 ⌊x⌋₊, (f n ^ 2 - f' n ^ 2) / n := by
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun n _ => by ring
+    have hlogx : (1 / 2 : ℝ) < Real.log x := by
+      have h2x : Real.log 2 ≤ Real.log x :=
+        Real.log_le_log (by norm_num) hx
+      have := Real.log_two_gt_d9
+      linarith
+    rw [hsplit, abs_le]
+    constructor
+    · nlinarith [hM'.1, hDx, hlogx, hD0]
+    · nlinarith [hM'.2, hDnn, hlogx, hC₀.le]
+
+/-- **Masked twist**: a selector with values in {0} ∪ {unimodular} — the
+shape of a Dirichlet character including its conductor zeros — sends an
+interface system into the modulus interface, given the removed-energy
+bound. The character's phases vanish by F3; only the mask's energy cost
+remains. -/
+theorem masked_twist (hf : EulerStiffness f) (u : ℕ → ℂ)
+    (hu : ∀ n, u n = 0 ∨ ‖u n‖ = 1)
+    {D : ℝ} (hD0 : 0 ≤ D)
+    (hD : ∀ x : ℝ, 2 ≤ x →
+      ∑ n ∈ Ioc 0 ⌊x⌋₊, (f n ^ 2 - (‖u n‖ * f n) ^ 2) / n ≤ D) :
+    EulerStiffnessC (fun n => u n * (f n : ℂ)) := by
+  unfold EulerStiffnessC
+  have heq : (fun n => ‖u n * (f n : ℂ)‖) = fun n => ‖u n‖ * f n :=
+    funext fun n => by
+      rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (hf.nonneg n)]
+  rw [heq]
+  refine defect_stability hf _ (fun n => ?_) (fun n => ?_) hD0 hD
+  · exact mul_nonneg (norm_nonneg _) (hf.nonneg n)
+  · rcases hu n with h | h
+    · rw [h]
+      simpa using hf.nonneg n
+    · rw [h, one_mul]
+
 end Factorization
 
 #print axioms Factorization.sum_sq_le
@@ -756,3 +831,5 @@ end Factorization
 #print axioms Factorization.sum_mul_log_div_sqrt_le
 #print axioms Factorization.tapered_diagonal
 #print axioms Factorization.EulerStiffnessC.apply_six
+#print axioms Factorization.defect_stability
+#print axioms Factorization.masked_twist
