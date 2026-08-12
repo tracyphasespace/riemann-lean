@@ -15,3 +15,6 @@ name = "Zeta23Bridge"
 
 [[lean_lib]]
 name = "SpongeStage"
+
+[[lean_lib]]
+name = "Factorization"

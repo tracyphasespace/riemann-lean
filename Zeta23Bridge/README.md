@@ -58,6 +58,16 @@ floored), `volume_shadow` (totient of a primorial = `∏(p−1)`), `parity_proje
 (the ½(1+S) projector with the 2 derived). See paper §11 for the full
 intuition → classical-owner → Lean dictionary.
 
+## Factorization experiment (ledger §8, commitment ii) — IN PROGRESS
+
+`Factorization.md` records the paper-level dependency audit of [Z23] §5 against
+the `EulerStiffness` fields (verdict: the prime side factors — every arithmetic
+input is a field or field-derivable; residue = the completed-function package,
+by design; complex/modulus generalization `EulerStiffnessC` needed for Thm E).
+`Factorization.lean` (Stage F1, kernel-checked): `sum_sq_le`,
+`sum_div_sqrt_sq_le`, `freq_spacing` — [Z23] Lemma 5.1's derived estimates
+proved from the interface alone, for any `f`. Milestones F2–F5 in the .md.
+
 ## Reproduce
 
 ```bash
