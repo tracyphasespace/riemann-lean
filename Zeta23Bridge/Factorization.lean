@@ -1055,6 +1055,307 @@ theorem dirichlet_inhabitant {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q
       ⟨hp, hpd.trans (Nat.gcd_dvd_right n q), NeZero.ne q⟩,
       hpd.trans (Nat.gcd_dvd_left n q)⟩
 
+/-! ## F4b: the Prop 5.6 adapter — statement-identical coverage of [Z23]'s
+arithmetic seam
+
+[Z23]'s prime side reads coefficients only through the six fields of
+`Zeta23.ChebyshevMertens` (`Zeta23/Hypotheses.lean`). In particular the
+window sandwich behind [prop:PP] (`sum_a2g_upper'`/`sum_a2g_lower'` in
+`Zeta23/PrimeSideB/PP.lean`) consumes exactly one arithmetic fact —
+`cheb2b`, the real-cutoff integrated second moment — plus tent facts
+about the window itself ([eq:gbounds]), which are coefficient-free. The
+shape-covering row `tapered_diagonal ↔ Prop 5.6` (precision rule 3)
+therefore closes at this seam: `cheb2b_of_interface` derives [Z23]'s
+`cheb2b` at its literal statement (floor transfer over
+`integrated_second_moment`), and `chebyshevMertens_of_interface`
+assembles their declared consuming type from the interface — with the
+residue named as an explicit hypothesis: the single field `cheb1b`,
+whose hardcoded constant `3` is sharper than the interface's `chebyshev`
+field supplies. -/
+
+/-- **F4b.1 (the Prop 5.6 seam)**: the real-cutoff integrated second
+moment, in the exact statement shape of [Z23]'s
+`ChebyshevMertens.cheb2b`. Floor transfer over
+`integrated_second_moment`: the cutoff gap `log x − log ⌊x⌋ ≤ log 2`
+costs one `mertens_energy` evaluation plus a cube difference, both
+O(log²x). -/
+theorem cheb2b_of_interface (hf : EulerStiffness f) :
+    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
+      |∑ n ∈ Ioc 0 ⌊x⌋₊, f n ^ 2 / n * (Real.log x - Real.log n)
+        - Real.log x ^ 3 / 6| ≤ C * Real.log x ^ 2 := by
+  obtain ⟨C₀, hC₀, hME⟩ := hf.mertens_energy
+  obtain ⟨C₁, hC₁, hI⟩ := integrated_second_moment hf
+  refine ⟨C₁ + C₀ + 1, fun x hx => ?_⟩
+  set N := ⌊x⌋₊ with hNdef
+  have hx0 : (0 : ℝ) < x := by linarith
+  have hN2 : 2 ≤ N := Nat.le_floor (by exact_mod_cast hx)
+  have h2N : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hNx : (N : ℝ) ≤ x := Nat.floor_le hx0.le
+  have hxN : x < (N : ℝ) + 1 := Nat.lt_floor_add_one x
+  have hLx : 0 < Real.log x := Real.log_pos (by linarith)
+  have hLN : 0 < Real.log N := Real.log_pos (by linarith)
+  have hLNx : Real.log N ≤ Real.log x := Real.log_le_log (by linarith) hNx
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2_1 : Real.log 2 ≤ 1 := by
+    have := Real.log_le_sub_one_of_pos (by norm_num : (0:ℝ) < 2)
+    linarith
+  have hgap : Real.log x - Real.log N ≤ Real.log 2 := by
+    have h1 : Real.log x ≤ Real.log (2 * N) :=
+      Real.log_le_log hx0 (by linarith)
+    rw [Real.log_mul (by norm_num) (by positivity)] at h1
+    linarith
+  have hlog2x : Real.log 2 ≤ Real.log x := Real.log_le_log (by norm_num) hx
+  have hSnn : 0 ≤ ∑ n ∈ Ioc 0 N, f n ^ 2 / n :=
+    Finset.sum_nonneg fun n _ => by positivity
+  have hsplit : ∑ n ∈ Ioc 0 N, f n ^ 2 / n * (Real.log x - Real.log n)
+      = (∑ n ∈ Ioc 0 N, f n ^ 2 / n * (Real.log N - Real.log n))
+        + (Real.log x - Real.log N) * ∑ n ∈ Ioc 0 N, f n ^ 2 / n := by
+    rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun n _ => by ring
+  have hIN := hI N hN2
+  have hMEx := hME x hx
+  have hSup : ∑ n ∈ Ioc 0 N, f n ^ 2 / n
+      ≤ Real.log x ^ 2 / 2 + C₀ * Real.log x := by
+    have := (abs_le.mp hMEx).2
+    linarith
+  have hES0 : 0 ≤ (Real.log x - Real.log N) * ∑ n ∈ Ioc 0 N, f n ^ 2 / n :=
+    mul_nonneg (by linarith) hSnn
+  have hES : (Real.log x - Real.log N) * (∑ n ∈ Ioc 0 N, f n ^ 2 / n)
+      ≤ Real.log x ^ 2 / 2 + C₀ * Real.log x ^ 2 := by
+    have h1 : (Real.log x - Real.log N) * (∑ n ∈ Ioc 0 N, f n ^ 2 / n)
+        ≤ Real.log 2 * (Real.log x ^ 2 / 2 + C₀ * Real.log x) :=
+      mul_le_mul hgap hSup hSnn hlog2.le
+    have ha : Real.log 2 * (Real.log x ^ 2 / 2) ≤ Real.log x ^ 2 / 2 := by
+      nlinarith [sq_nonneg (Real.log x)]
+    have hb : Real.log 2 * (C₀ * Real.log x) ≤ C₀ * Real.log x ^ 2 := by
+      calc Real.log 2 * (C₀ * Real.log x)
+          = C₀ * (Real.log 2 * Real.log x) := by ring
+        _ ≤ C₀ * (Real.log x * Real.log x) :=
+            mul_le_mul_of_nonneg_left
+              (mul_le_mul_of_nonneg_right hlog2x hLx.le) hC₀.le
+        _ = C₀ * Real.log x ^ 2 := by ring
+    calc (Real.log x - Real.log N) * (∑ n ∈ Ioc 0 N, f n ^ 2 / n)
+        ≤ Real.log 2 * (Real.log x ^ 2 / 2 + C₀ * Real.log x) := h1
+      _ = Real.log 2 * (Real.log x ^ 2 / 2) + Real.log 2 * (C₀ * Real.log x) := by
+          ring
+      _ ≤ Real.log x ^ 2 / 2 + C₀ * Real.log x ^ 2 := by linarith
+  have hfac : Real.log x ^ 3 - Real.log N ^ 3
+      = (Real.log x - Real.log N)
+        * (Real.log x ^ 2 + Real.log x * Real.log N + Real.log N ^ 2) := by
+    ring
+  have htri : 0 ≤ Real.log x ^ 2 + Real.log x * Real.log N + Real.log N ^ 2 :=
+    add_nonneg (add_nonneg (sq_nonneg _) (mul_nonneg hLx.le hLN.le)) (sq_nonneg _)
+  have hsum3 : Real.log x ^ 2 + Real.log x * Real.log N + Real.log N ^ 2
+      ≤ 3 * Real.log x ^ 2 := by
+    nlinarith [mul_nonneg hLx.le (sub_nonneg.mpr hLNx),
+      mul_nonneg hLN.le (sub_nonneg.mpr hLNx),
+      mul_nonneg (add_nonneg hLx.le hLN.le) (sub_nonneg.mpr hLNx)]
+  have hcube0 : 0 ≤ Real.log x ^ 3 - Real.log N ^ 3 := by
+    rw [hfac]
+    exact mul_nonneg (by linarith) htri
+  have hcube : Real.log x ^ 3 - Real.log N ^ 3 ≤ 3 * Real.log x ^ 2 := by
+    rw [hfac]
+    calc (Real.log x - Real.log N)
+          * (Real.log x ^ 2 + Real.log x * Real.log N + Real.log N ^ 2)
+        ≤ 1 * (3 * Real.log x ^ 2) :=
+          mul_le_mul (by linarith) hsum3 htri (by norm_num)
+      _ = 3 * Real.log x ^ 2 := by ring
+  have hLN2 : Real.log N ^ 2 ≤ Real.log x ^ 2 := by
+    nlinarith [mul_nonneg (add_nonneg hLx.le hLN.le) (sub_nonneg.mpr hLNx)]
+  have hC1LN : C₁ * Real.log N ^ 2 ≤ C₁ * Real.log x ^ 2 :=
+    mul_le_mul_of_nonneg_left hLN2 hC₁.le
+  have hC0L : 0 ≤ C₀ * Real.log x ^ 2 := mul_nonneg hC₀.le (sq_nonneg _)
+  rw [abs_le] at hIN
+  rw [hsplit, abs_le]
+  constructor
+  · linarith [hIN.1, hES0, hcube, hC1LN, hC0L, sq_nonneg (Real.log x)]
+  · linarith [hIN.2, hES, hcube0, hC1LN]
+
+/-- **F4b.2**: the log-damped √-moment, in the exact statement shape of
+[Z23]'s `ChebyshevMertens.cheb1c`. Split at √x: below `⌊√x⌋` the crude
+`log n ≥ log 2` costs a factor `1/log 2` against the F2a bound at √x
+(and `√(√x)·log x ≤ 4√x` absorbs the log); above it, `log n ≥ ½ log x`.
+The `n = 1` term is `0/0 = 0` (Lean convention, as in [Z23]'s own
+field). -/
+theorem cheb1c_of_interface (hf : EulerStiffness f) :
+    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
+      ∑ n ∈ Ioc 0 ⌊x⌋₊, f n / (Real.sqrt n * Real.log n)
+        ≤ C * Real.sqrt x / Real.log x := by
+  refine ⟨(4 / Real.log 2 + 2) * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)),
+    fun x hx => ?_⟩
+  have hx0 : (0 : ℝ) < x := by linarith
+  have hLx : 0 < Real.log x := Real.log_pos (by linarith)
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hsqx : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx0
+  have hssx : 0 < Real.sqrt (Real.sqrt x) := Real.sqrt_pos.mpr hsqx
+  have hA0 : 0 ≤ 2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4) := by
+    have h1 : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg 2
+    have h2 : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
+    nlinarith
+  set m := ⌊Real.sqrt x⌋₊ with hmdef
+  set N := ⌊x⌋₊ with hNdef
+  have hmN : m ≤ N :=
+    Nat.floor_le_floor (Real.sqrt_le_self_iff.mpr (Or.inr (by linarith)))
+  -- per-term bound below ⌊√x⌋: log n ≥ log 2 (n = 1 contributes 0)
+  have hstep1 : ∀ n ∈ Ioc 0 m, f n / (Real.sqrt n * Real.log n)
+      ≤ f n / Real.sqrt n / Real.log 2 := by
+    intro n hn
+    obtain ⟨hn0, _⟩ := Finset.mem_Ioc.mp hn
+    rcases Nat.lt_or_ge n 2 with h2 | h2
+    · have h1 : n = 1 := by omega
+      subst h1
+      simp only [Nat.cast_one, Real.sqrt_one, Real.log_one, mul_zero, div_zero,
+        div_one]
+      exact div_nonneg (hf.nonneg 1) hlog2.le
+    · have hsn : 0 < Real.sqrt n := Real.sqrt_pos.mpr (by exact_mod_cast hn0)
+      have hln : Real.log 2 ≤ Real.log n :=
+        Real.log_le_log (by norm_num) (by exact_mod_cast h2)
+      have h0d : 0 < Real.sqrt n * Real.log 2 := mul_pos hsn hlog2
+      calc f n / (Real.sqrt n * Real.log n)
+          ≤ f n / (Real.sqrt n * Real.log 2) :=
+            div_le_div_of_nonneg_left (hf.nonneg n) h0d
+              (mul_le_mul_of_nonneg_left hln hsn.le)
+        _ = f n / Real.sqrt n / Real.log 2 := by rw [div_div]
+  -- per-term bound above ⌊√x⌋: log n ≥ ½ log x
+  have hstep2 : ∀ n ∈ Ioc m N, f n / (Real.sqrt n * Real.log n)
+      ≤ 2 / Real.log x * (f n / Real.sqrt n) := by
+    intro n hn
+    obtain ⟨hmn, _⟩ := Finset.mem_Ioc.mp hn
+    have hn0 : 0 < n := lt_of_le_of_lt (Nat.zero_le m) hmn
+    have hsn : 0 < Real.sqrt n := Real.sqrt_pos.mpr (by exact_mod_cast hn0)
+    have hsqx_lt : Real.sqrt x < (n : ℝ) := by
+      have h1 : Real.sqrt x < (m : ℝ) + 1 := Nat.lt_floor_add_one _
+      have h2 : (m : ℝ) + 1 ≤ (n : ℝ) := by exact_mod_cast hmn
+      linarith
+    have hln : Real.log x / 2 ≤ Real.log n := by
+      rw [← Real.log_sqrt hx0.le]
+      exact Real.log_le_log hsqx hsqx_lt.le
+    have h0d : 0 < Real.sqrt n * (Real.log x / 2) :=
+      mul_pos hsn (by positivity)
+    calc f n / (Real.sqrt n * Real.log n)
+        ≤ f n / (Real.sqrt n * (Real.log x / 2)) :=
+          div_le_div_of_nonneg_left (hf.nonneg n) h0d
+            (mul_le_mul_of_nonneg_left hln hsn.le)
+      _ = 2 / Real.log x * (f n / Real.sqrt n) := by
+          field_simp
+  have hS1 : ∑ n ∈ Ioc 0 m, f n / (Real.sqrt n * Real.log n)
+      ≤ 2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt (Real.sqrt x))
+          / Real.log 2 := by
+    calc ∑ n ∈ Ioc 0 m, f n / (Real.sqrt n * Real.log n)
+        ≤ ∑ n ∈ Ioc 0 m, f n / Real.sqrt n / Real.log 2 :=
+          Finset.sum_le_sum hstep1
+      _ = (∑ n ∈ Ioc 0 m, f n / Real.sqrt n) / Real.log 2 := by
+          rw [Finset.sum_div]
+      _ ≤ _ :=
+          (div_le_div_iff_of_pos_right hlog2).mpr
+            (sum_div_sqrt_le_real hf (Real.sqrt_nonneg x))
+  have hS2 : ∑ n ∈ Ioc m N, f n / (Real.sqrt n * Real.log n)
+      ≤ 2 / Real.log x
+          * (2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt x)) := by
+    have h2L : (0 : ℝ) ≤ 2 / Real.log x := div_nonneg (by norm_num) hLx.le
+    calc ∑ n ∈ Ioc m N, f n / (Real.sqrt n * Real.log n)
+        ≤ ∑ n ∈ Ioc m N, 2 / Real.log x * (f n / Real.sqrt n) :=
+          Finset.sum_le_sum hstep2
+      _ = 2 / Real.log x * ∑ n ∈ Ioc m N, f n / Real.sqrt n := by
+          rw [Finset.mul_sum]
+      _ ≤ 2 / Real.log x * ∑ n ∈ Ioc 0 N, f n / Real.sqrt n := by
+          refine mul_le_mul_of_nonneg_left ?_ h2L
+          refine Finset.sum_le_sum_of_subset_of_nonneg
+            (Finset.Ioc_subset_Ioc_left (Nat.zero_le m)) ?_
+          intro k _ _
+          exact div_nonneg (hf.nonneg k) (Real.sqrt_nonneg k)
+      _ ≤ _ :=
+          mul_le_mul_of_nonneg_left
+            (sum_div_sqrt_le_real hf (by linarith)) h2L
+  -- log x ≤ 4·√(√x), hence √(√x)·log x ≤ 4√x
+  have hlog4 : Real.log x ≤ 4 * Real.sqrt (Real.sqrt x) := by
+    have h4 : Real.log x = 4 * Real.log (Real.sqrt (Real.sqrt x)) := by
+      rw [Real.log_sqrt (Real.sqrt_nonneg x), Real.log_sqrt hx0.le]
+      ring
+    have := Real.log_le_sub_one_of_pos hssx
+    rw [h4]
+    linarith
+  have hkey : Real.sqrt (Real.sqrt x) * Real.log x ≤ 4 * Real.sqrt x := by
+    calc Real.sqrt (Real.sqrt x) * Real.log x
+        ≤ Real.sqrt (Real.sqrt x) * (4 * Real.sqrt (Real.sqrt x)) :=
+          mul_le_mul_of_nonneg_left hlog4 hssx.le
+      _ = 4 * (Real.sqrt (Real.sqrt x) * Real.sqrt (Real.sqrt x)) := by ring
+      _ = 4 * Real.sqrt x := by rw [Real.mul_self_sqrt (Real.sqrt_nonneg x)]
+  -- assemble
+  rw [← Finset.Ioc_union_Ioc_eq_Ioc (Nat.zero_le m) hmN,
+    Finset.sum_union (Finset.Ioc_disjoint_Ioc_of_le le_rfl),
+    le_div_iff₀ hLx]
+  have hB1 : (∑ n ∈ Ioc 0 m, f n / (Real.sqrt n * Real.log n)) * Real.log x
+      ≤ 4 * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)) / Real.log 2
+          * Real.sqrt x := by
+    calc (∑ n ∈ Ioc 0 m, f n / (Real.sqrt n * Real.log n)) * Real.log x
+        ≤ 2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt (Real.sqrt x))
+            / Real.log 2 * Real.log x :=
+          mul_le_mul_of_nonneg_right hS1 hLx.le
+      _ = 2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4) / Real.log 2
+            * (Real.sqrt (Real.sqrt x) * Real.log x) := by ring
+      _ ≤ 2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4) / Real.log 2
+            * (4 * Real.sqrt x) :=
+          mul_le_mul_of_nonneg_left hkey (div_nonneg hA0 hlog2.le)
+      _ = 4 * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)) / Real.log 2
+            * Real.sqrt x := by ring
+  have hB2 : (∑ n ∈ Ioc m N, f n / (Real.sqrt n * Real.log n)) * Real.log x
+      ≤ 2 * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)) * Real.sqrt x := by
+    calc (∑ n ∈ Ioc m N, f n / (Real.sqrt n * Real.log n)) * Real.log x
+        ≤ 2 / Real.log x
+            * (2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt x))
+            * Real.log x :=
+          mul_le_mul_of_nonneg_right hS2 hLx.le
+      _ = 2 * (2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt x))
+            * (Real.log x / Real.log x) := by ring
+      _ = 2 * (2 * (Real.sqrt 2 + 1) * ((Real.log 4 + 4) * Real.sqrt x)) := by
+          rw [div_self hLx.ne', mul_one]
+      _ = 2 * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)) * Real.sqrt x := by
+          ring
+  have hCeq : 4 * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)) / Real.log 2
+        * Real.sqrt x
+      + 2 * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4)) * Real.sqrt x
+      = (4 / Real.log 2 + 2) * (2 * (Real.sqrt 2 + 1) * (Real.log 4 + 4))
+        * Real.sqrt x := by
+    ring
+  rw [add_mul]
+  linarith [hB1, hB2]
+
+open ArithmeticFunction in
+/-- **F4b.3 (the adapter, assembled at [Z23]'s consuming type)**: the
+interface yields five of the six fields of `Zeta23.ChebyshevMertens` —
+the structure through which [Z23]'s §5 reads *all* coefficient
+information — at their literal statements. The residue is named, not
+hidden: the single field `cheb1b` (Σ Λ(n)/√n ≤ 3√x eventually) hardcodes
+a constant sharper than the interface's `chebyshev` field carries; the
+interface grade-covers it at constant `2(√2+1)(log 4 + 4)`
+(`sum_div_sqrt_le_real`) but cannot reach the literal `3`, so it enters
+as an explicit hypothesis. Applied to `eulerStiffness_vonMangoldt` plus
+[Z23]'s own `cheb1b`, this reconstructs their structure; the
+correspondence rows behind Prop 5.6 / §7.1 (precision rule 3) close at
+this seam. -/
+theorem chebyshevMertens_of_interface
+    (hf : EulerStiffness (fun n => Λ n))
+    (h1b : ∃ x₀ : ℝ, ∀ x : ℝ, x₀ ≤ x →
+      ∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / Real.sqrt n ≤ 3 * Real.sqrt x) :
+    Zeta23.ChebyshevMertens where
+  cheb1a := ⟨Real.log 4 + 4, fun x hx => hf.chebyshev x (by linarith)⟩
+  cheb1b := h1b
+  cheb1c := by
+    obtain ⟨C, hC⟩ := cheb1c_of_interface hf
+    exact ⟨C, hC⟩
+  cheb1d := ⟨Real.log 4 + 4, fun x hx => by
+    have h := sum_sq_le hf (by linarith : (1 : ℝ) ≤ x)
+    have he : Real.log x * ((Real.log 4 + 4) * x)
+        = (Real.log 4 + 4) * x * Real.log x := by ring
+    linarith⟩
+  cheb2a := by
+    obtain ⟨C, _, h⟩ := hf.mertens_energy
+    exact ⟨C, h⟩
+  cheb2b := by
+    obtain ⟨C, hC⟩ := cheb2b_of_interface hf
+    exact ⟨C, hC⟩
+
 end Factorization
 
 #print axioms Factorization.sum_sq_le
@@ -1089,3 +1390,6 @@ end Factorization
 #print axioms Factorization.bad_prime_energy
 #print axioms Factorization.euler_factor_deletion
 #print axioms Factorization.dirichlet_inhabitant
+#print axioms Factorization.cheb2b_of_interface
+#print axioms Factorization.cheb1c_of_interface
+#print axioms Factorization.chebyshevMertens_of_interface
