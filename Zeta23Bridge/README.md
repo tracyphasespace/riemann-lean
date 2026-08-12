@@ -60,7 +60,7 @@ intuition → classical-owner → Lean dictionary.
 
 ## Factorization experiment (ledger §8, commitment ii) — IN PROGRESS
 
-`Factorization.md` records the paper-level dependency audit of [Z23] §5 against
+`Factorization.md` records the factorization experiment (F0–F4a: arithmetic completeness — five modulus conditions suffice for every identified coefficient-dependent input of [Z23] §5; the ceiling–factorization duality; canonical status statement). `audit.sh` now globs every `.lean` file (58 audited theorems). The paper-level dependency audit of [Z23] §5 against
 the `EulerStiffness` fields (verdict: the prime side factors — every arithmetic
 input is a field or field-derivable; residue = the completed-function package,
 by design; complex/modulus generalization `EulerStiffnessC` needed for Thm E).

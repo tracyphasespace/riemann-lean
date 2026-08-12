@@ -37,6 +37,22 @@ Method: every lemma/proposition of [Z23] §§2–6 was checked for the arithmeti
 
 **Answer to the ledger's question, at current evidence:** *it factors, at the architecture level* — with the completed-package residue named (as it must be) and one required generalization (complex/modulus form) identified. What remains to convert this from audited claim to theorem is the Lean work below.
 
+## Canonical status statement (external wording, fixed after review round 3)
+
+> We audited eleven coefficient-dependent touchpoints in [Z23] §5. Each is covered by a machine-checked theorem derived from the five-condition modulus interface. We found no additional coefficient dependence. The remaining unformalized assembly consists of the coefficient-independent analytic scaffolding identified in [Z23] §7.1. We therefore claim **arithmetic completeness of the interface — five modulus conditions suffice for every identified coefficient-dependent input** — not yet a formal abstract version of Theorem 5.8.
+
+Two precision rules bound this claim. **Sufficiency, not necessity**: no minimality claim is made — none of the five conditions has been shown unweakenable. **Enumeration is not kernel-verified**: the kernel certifies that each of the eleven touchpoints is covered; that the *list of eleven is exhaustive* is a human/AI audit of [Z23] §5, the same epistemic type as the §7.1 scaffolding accounting, and it is where an error would live if one lives anywhere. On the counterexample: `dh_not_eulerStiffnessC` is a genuine second check — the 1 + κ² defect survives the modulus embedding — beyond the single support-gate `dh_not_eulerStiffness`.
+
+## What the frame produces: the ceiling–factorization duality
+
+The pre-registered failure point for F4 — an off-diagonal bilinear sum inexpressible from the five diagonal fields — resolved in its contrapositive, and the resolution is a result. The closure table shows Prop 5.6's off-diagonal terms O₁, O₂ covered by the Montgomery–Vaughan inequality (coefficient-free) plus *diagonal-derived* moments: in the bandwidth-≤1 regime, **the proof never evaluates off-diagonal prime correlations — it only dominates them.** The diagonal interface suffices *precisely because* the method stays under the ≈0.68185 ceiling, and the ceiling exists *precisely because* the method is diagonal-blind past Fourier support 1. **The factorization and [Z23] Remark 1.1 are two faces of one fact.**
+
+This sharpens the ledger's falsifier (b) from an adopted expectation into a machine-checkable criterion:
+
+> **Any unconditional proof of an on-line proportion exceeding ≈ 0.68185 cannot factor through `EulerStiffness`: it must consume at least one additional field of bilinear/additive-correlation type, and the interface now defines exactly what "new input" means.**
+
+This is the first place in the program where the frame *produces* a criterion rather than reframing a result — the bar the ledger's §5 accepted ("make the frame produce something"), met at its first opportunity.
+
 ## Milestones
 
 - **F1 (this commit): the derivable-lemma layer, easy grade.** `Factorization.lean`: F1.1 second-moment bound Σf² ≤ (log x)·(log 4+4)·x; F1.2 crude √-moment (Σ f/√n)² ≤ x·Σ f²/n (Cauchy–Schwarz — pairs with `mertens_energy` for the √x·log x grade); F1.3 the MV frequency spacing log(n+1) − log n ≥ 1/(n+1) from integer support alone. All from the five fields; kernel-checked.
@@ -60,7 +76,7 @@ Method: every lemma/proposition of [Z23] §§2–6 was checked for the arithmeti
   | Prop 5.7 cross terms (Σ aₙ/log n-type) | F2a (log n ≥ log 2 on the range) |
   | complex/Dirichlet coefficients (Thm E) | F3 modulus interface + `twist` |
 
-  **No obstruction was found: every arithmetic touchpoint sees the interface, not Λ.** The remaining unformalized §5 content — the Gabor/Poisson window identities, Dirichlet-kernel bounds, Stirling, and the assembly of Theorem 5.8 — is *coefficient-free by [Z23]'s own accounting* (§7.1: "Nothing in Sections 4–5 used that φ is flat-topped, only [window properties]"; the zero side is already abstract via `strut_hyperbolic_shadow_bound`). Precise status: **the factorization holds at arithmetic completeness** — the abstraction demonstrably supplies every coefficient input at full strength, bounds and main terms both. This is strictly stronger than F0's "architecture level" and strictly weaker than the full abstract Theorem 5.8, which additionally requires formalizing the coefficient-free analytic scaffolding (**F4-final**, large, zero arithmetic content, hence — by construction — no *interface* obstruction can arise there; any failure would be a formalization-labor gap, not a mathematical one).
+  **No obstruction was found: every *identified* arithmetic touchpoint sees the interface, not Λ** (enumeration caveat in the canonical status statement above). The remaining unformalized §5 content — the Gabor/Poisson window identities, Dirichlet-kernel bounds, Stirling, and the assembly of Theorem 5.8 — is *coefficient-free by [Z23]'s own accounting* (§7.1: "Nothing in Sections 4–5 used that φ is flat-topped, only [window properties]"; the zero side is already abstract via `strut_hyperbolic_shadow_bound`). Precise status: **the factorization holds at arithmetic completeness** — the abstraction demonstrably supplies every coefficient input at full strength, bounds and main terms both. This is strictly stronger than F0's "architecture level" and strictly weaker than the full abstract Theorem 5.8, which additionally requires formalizing the coefficient-free analytic scaffolding (**F4-final**, large, zero arithmetic content, hence no *interface* obstruction can arise there on [Z23]'s own accounting — a research assessment, stated here and not for external use until F4-final compiles).
 - **F5 (conditional on F4): the abstract theorem.** Completed-package + `EulerStiffnessC` ⟹ 2/3-type bounds; [Z23] Theorems A–E become two instantiations.
 
 ## Falsification discipline
