@@ -27,6 +27,7 @@ interface-`f`, and Davenport–Heilbronn has no interface-`f`
 -/
 import Zeta23Bridge
 import SpongeStage
+import Mathlib.NumberTheory.DirichletCharacter.Bounds
 
 noncomputable section
 
@@ -1020,9 +1021,41 @@ theorem euler_factor_deletion (u : ℕ → ℂ) (Q : Finset ℕ)
           rw [Finset.sum_filter]
       _ ≤ ∑ p ∈ Q, Real.log p ^ 2 / ((p : ℝ) - 1) :=
           bad_prime_energy Q hQ ⌊x⌋₊
+
+open ArithmeticFunction in
+/-- **F3b-instance, named (the second inhabitant)**: for every Dirichlet
+character `χ` mod `q` (`q ≠ 0`), the twisted coefficients `χ(n)·Λ(n)`
+satisfy the complex interface. Pure plumbing over
+`euler_factor_deletion` with `Q = q.primeFactors`: character values are
+`0` or unimodular (`DirichletCharacter.unit_norm_eq_one` /
+`MulChar.map_nonunit`), and `χ` vanishes only on `n` sharing a prime
+factor with `q` (`ZMod.isUnit_iff_coprime`). Primitivity is not needed
+(registered constraint). The abstract defect constant specializes to
+`D_q = Σ_{p ∣ q} log²p/(p − 1)`, exactly the classical Euler-factor
+deletion cost. The interface itself is untouched (frozen-interface
+constraint); `q` enters only through instance parameterization — this is
+a per-character claim, with no uniformity in `q` asserted. -/
+theorem dirichlet_inhabitant {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q) :
+    EulerStiffnessC (fun n => χ ((n : ℕ) : ZMod q) * ((vonMangoldt n : ℝ) : ℂ)) := by
+  classical
+  refine euler_factor_deletion (fun n => χ ((n : ℕ) : ZMod q)) q.primeFactors
+    (fun p hp => Nat.prime_of_mem_primeFactors hp) (fun n => ?_) (fun n _hn h0 => ?_)
+  · by_cases h : IsUnit ((n : ℕ) : ZMod q)
+    · exact Or.inr (by simpa [IsUnit.unit_spec] using χ.unit_norm_eq_one h.unit)
+    · exact Or.inl (χ.map_nonunit h)
+  · have hnu : ¬ IsUnit ((n : ℕ) : ZMod q) := by
+      intro hu'
+      have h1 : ‖χ ((n : ℕ) : ZMod q)‖ = 1 := by
+        simpa [IsUnit.unit_spec] using χ.unit_norm_eq_one hu'.unit
+      rw [h0, norm_zero] at h1
+      exact one_ne_zero h1.symm
+    rw [ZMod.isUnit_iff_coprime] at hnu
+    obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd hnu
+    exact ⟨p, Nat.mem_primeFactors.mpr
+      ⟨hp, hpd.trans (Nat.gcd_dvd_right n q), NeZero.ne q⟩,
+      hpd.trans (Nat.gcd_dvd_left n q)⟩
+
 end Factorization
-
-
 
 #print axioms Factorization.sum_sq_le
 #print axioms Factorization.sum_div_sqrt_sq_le
@@ -1055,3 +1088,4 @@ end Factorization
 #print axioms Factorization.prime_tower_energy
 #print axioms Factorization.bad_prime_energy
 #print axioms Factorization.euler_factor_deletion
+#print axioms Factorization.dirichlet_inhabitant
