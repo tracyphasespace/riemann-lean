@@ -63,8 +63,10 @@ enforced, else the row is marked UNRELIABLE).
    small t, with T_first(t) climbing as t decreases — not a clean t₀
    threshold but a sliding visibility horizon.
 
-Anchor (audit-level until cite-checked): Bombieri–Hejhal 1995 —
-conditionally, almost all zeros of such combinations lie ON the line —
+Anchor (cite-checked post-run, reference confirmed: Bombieri & Hejhal,
+Duke Math. J. 80 (1995) 821–862, DOI 10.1215/S0012-7094-95-08028-4;
+conditional on RH-type + zero-spacing hypotheses for the components,
+almost all zeros of the real combinations lie ON the line —
 predicts that even at t = 1 the off-line counts are a vanishing fraction
 of all zeros; this experiment does not test that claim, only the
 off-line counts' t-dependence.
