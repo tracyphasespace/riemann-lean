@@ -619,4 +619,4 @@ example : (a + b) + c = a + (b + c) := by rw?  -- Suggests: rw [add_assoc]
 
 ---
 
-*Updated 2026-01-24 | RH Build: PASSING | 0 sorries | 15 axioms | Next: Navier-Stokes (see NS.md)*
+*Updated 2026-08-12 | Status lines are per-subsystem snapshots — do not quote a single number for the whole tree. The `ProofEngine`/`GeometricBridge` chain builds 0-sorry/0-axiom with O3 as a hypothesis parameter (see `Papers/June_Riemann_Study.md` Appendix C); the wider tree carries exploratory modules audited in `SORRY_AUDIT.md` (66 sorries / 8 axioms at last audit; the older "0 sorries | 15 axioms" footer referred to a 2026-01-24 snapshot). Re-verify any headline with `#print axioms` before citing.*

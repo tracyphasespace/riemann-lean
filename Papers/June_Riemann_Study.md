@@ -363,7 +363,7 @@ However, in the Clifford Phase Space, the terms are Rotors (Scalar \+ Bivector).
 
 **Conclusion:**
 
-The Bivector nature of the algebra breaks the binary opposition of scalar dynamics. It ensures that the Velocity Term (Stiffness) always dominates the Directional Term. Consequently, the effective potential of the Zeta function is strictly convex (curving upward) in the neighborhood of the critical line. The "valley" at $$\\sigma=1/2$$ has steep, unbreakable walls, rendering the existence of off-line zeros geometrically impossible.
+The Bivector nature of the algebra breaks the binary opposition of scalar dynamics. It provides the mechanism by which the Velocity Term (Stiffness) can dominate the Directional Term, and in every regime we can compute the effective potential of the Zeta function is strictly convex (curving upward) in the neighborhood of the critical line. **This is a mechanism claim, not a proof.** As B.6 (the spiral counterexample) and B.9 (O3′) make precise, whether the "valley" at $$\\sigma=1/2$$ has unbreakable walls — whether off-line zeros are actually excluded — is exactly the open bridge hypothesis, which is equivalent to RH. What *is* now proved unconditionally, by a different accounting in the same indefinite-form arena, is the population-level version: at least two thirds (0.6725 with the optimal window) of the zeros lie on the critical line (Claude 2026; see Appendix B.10 and the companion paper `CliffordNN_TwoThirds_Aug2026.md`). Inertia counting delivers a theorem where pointwise convexity remains open.
 
 ### **3.6 The Analytic Bridge: Global Strict Convexity**
 
@@ -624,7 +624,7 @@ There is no "destructive interference" between distinct prime basis vectors beca
 
 #### **5.3.2 The Nullity of Composite Interference**
 
-A skeptic might argue that while primes are orthogonal, composite numbers (e.g., $$6 \= 2 \\cdot 3$$) creates mixing. However, in the Clifford geometric representation, the term corresponding to $$n=6$$ involves the product of bivectors $$B\_2 B\_3$$. In Split-Signature space ($$f^2=-1, e^2=+1$$), the geometric grade of a composite number is distinct from the grade of a prime.
+A skeptic might argue that while primes are orthogonal, composite numbers (e.g., $$6 \= 2 \\cdot 3$$) creates mixing. However, in the Clifford geometric representation, the term corresponding to $$n=6$$ involves the product of bivectors $$B\_2 B\_3$$: a grade-4 element, whose geometric grade is distinct from the grade-2 prime bivectors. (Convention note: each prime phase plane is *Euclidean*, $$P_p \\cong Cl(2,0)$$ with $$e_p^2 = f_p^2 = +1$$ and $$B_p^2 = -1$$, per the Sidebar of §1.2 and §2.2 — an earlier draft of this paragraph wrote "$$f^2=-1$$", which contradicted that convention. Genuinely split-signature planes, with $$B^2 = +1$$ hyperbolic boosts, do have a natural home in this program — but as the planes of *off-line zero pairs*, not of primes; see the companion paper `CliffordNN_TwoThirds_Aug2026.md`.)
 
 **Theorem 5.3 (Grade Orthogonality):**
 
@@ -767,7 +767,7 @@ By escaping the 1D complex plane and natively evaluating the primes in their pro
 
 ### **6.2 Summary**
 
-We have presented a complete logical chain resolving the Riemann Hypothesis, moving from algebraic foundations to asymptotic analysis:
+We have presented a complete *conditional* logical chain — a machine-verified reduction of the Riemann Hypothesis to the single bridge hypothesis O3/O3′ (see the Scope statement, B.6, and B.9; the bridge is equivalent to RH and is not discharged here) — moving from algebraic foundations to asymptotic analysis:
 
 1. **Architecture:** The $$Cl(n,n)$$ Split-Signature Algebra provides a rigorous geometric setting where distinct primes occupy orthogonal, commuting hyperplanes. This removes the assumption of coupling.  
 2. **Decoupling:** We proved that in this setting, the geometric coupling (BCH residue) between primes is exactly zero. The primes behave as independent harmonic oscillators.  
@@ -1037,7 +1037,23 @@ $$\boxed{\ \text{RH is reduced to: the Euler-product scalarization of }\xi\text{
 
 GA supplies the orthogonal prime-block architecture (O1, O2); the Euler product must supply the positivity of the scalar shadow (O3$$'$$). The latter remains open and is equivalent to the Riemann Hypothesis. Davenport–Heilbronn (Appendix B.8) is the negative control: any candidate proof of O3$$'$$ must *fail* on it at $$t = 85.6993$$, or it is using only symmetry and not the Euler product.
 
-### **B.10 Formal Lean Files**
+### **B.10 The Population-Level Theorem: Two Thirds Unconditionally (August 2026)**
+
+After this study was written, an unconditional result appeared that sits squarely in this document's arena and calibrates it. Claude (Anthropic), *"More than two thirds of the zeros of the Riemann zeta function lie on the critical line"* (August 10, 2026; Lean 4 formalization at `github.com/anthropics/zeta-23-lean`), proves unconditionally:
+
+$$\liminf_{T\to\infty} \frac{N_0^*(T,2T)}{N(T,2T)} \;\ge\; \frac{2}{3}, \qquad \text{(optimal window: } \tfrac32 - \tfrac{1}{\sqrt2}\cot\tfrac{1}{\sqrt2} = 0.6725\ldots\text{)}$$
+
+with the same constants for simple-and-on-line zeros, and $$5/6$$ (0.83625) for distinct zeros. The proof lives in exactly the ontology of this document — a **real, indefinite (Krein) quadratic form built from primes** (Weil's explicit-formula form, compressed to a finite real symmetric matrix) — but replaces the pointwise accounting of O3$$'$$ with **population-level inertia counting**: each on-line zero contributes a positive rank-one strut; each off-line pair $$\{\rho, 1-\bar\rho\}$$ contributes a **signature-$$(1,1)$$ hyperbolic plane** (a genuine split-signature $$Cl(1,1)$$ block, $$B^2 = +1$$); Sylvester's law of inertia and a rank–trace inequality then bound the proportion of struts from the two prime-side trace moments, which are unconditional (Montgomery 1973 / Baluyot–Goldston–Suriajaya–Turnage-Butterbaugh 2024).
+
+Three consequences for this program, stated plainly:
+
+1. **Validation of the arena, correction of the accounting.** The split-signature intuition of this document is realized in a working proof — but the hyperbolic planes belong to the *off-line zero pairs*, not to the primes (the primes live in the metric). And the theorem is obtained by counting signatures, not by proving convexity. Pointwise O3$$'$$ remains open and remains equivalent to RH; the population statement is what the indefinite-form arena can actually deliver unconditionally.
+2. **The ceiling is quantified.** With bandwidth-one pair-correlation input (the unconditional regime), the method's ceiling is $$\approx 0.68185$$; reaching proportions 0.70/0.80/0.90 requires additive prime-pair information (Hardy–Littlewood strength) at Fourier support $$\approx$$ 1.04/1.26/1.70. This quantifies the GUE obstruction stated in this document's Scope section: the decoupled (diagonal) part of the prime data yields 2/3; the zeros' full coupling lives in additive correlations beyond current knowledge. RH itself is out of reach of the mechanism.
+3. **The negative control matches.** The 2/3 proof fails on Davenport–Heilbronn for exactly the reason B.8 isolates: without an Euler product the coefficient growth $$\sum |c(n)|^2/n \sim x^{1+\delta}$$ destroys the mean-value step, and the certificate is empty (under-certification). The B.8 harness is therefore validated as the correct discipline.
+
+The companion paper `CliffordNN_TwoThirds_Aug2026.md` in this directory rebuilds the 2/3 theorem explicitly in $$Cl(N,N)$$ language, with the dictionary, the reversal of roles (zero pairs as hyperbolic planes), and the Collatz §17 valuation analogy (local contact unconditional, uniform accumulation open).
+
+### **B.11 Formal Lean Files**
 
 The following files in the Lean formalization project implement the energy convexity framework:
 
@@ -1049,6 +1065,8 @@ Together, these complete the operator-theoretic analytic half of the RH framewor
 ## **Appendix C: Formal Verification Status (Lean 4)**
 
 The proof architecture has been implemented in the Lean 4 theorem prover (v4.28.0-rc1, Mathlib v4.27.0-rc1), with 0 axioms, 0 sorry statements, 133 theorems, 30 live files, and 7262 lines of verified code. Build: 3450 jobs, 0 errors.
+
+*Scope of this claim (reconciliation note, 2026-08-12):* the 0-axiom / 0-sorry statement applies to the **`ProofEngine`/`GeometricBridge` chain enumerated in this appendix**, in which O3 enters as an explicit hypothesis *parameter* of `Clifford_RH_from_Bridge`, not as an axiom. The wider `Lean/` tree also contains earlier exploratory modules with sorries and axiom stubs, catalogued in `Lean/SORRY_AUDIT.md` (66 sorries / 8 axioms at its last audit), and an archived proposed-axiom registry (`ZetaSurface/archive/Axioms.proposed.lean`, never built or imported). Status lines in older docs (e.g. the `Lean/CLAUDE.md` footer) refer to earlier snapshots. Per the project's audit discipline, any headline claim should be re-verified against the current tree with `#print axioms` on the named theorems.
 
 **Core Proof Engine** (`ProofEngine/`):
 * **ProofEngine.lean**: Main theorem assembly — 4 theorem variants (`Clifford_RH_Derived`, `Clifford_RH_Analytic`, `Clifford_RH_StrictConvex`, `Clifford_RH_from_Bridge`). All depend only on `[propext, Classical.choice, Quot.sound]`.
