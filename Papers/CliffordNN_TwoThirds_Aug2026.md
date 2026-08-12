@@ -183,6 +183,31 @@ So the "downward invisibility" objection folds — **at the population level**. 
 
 ---
 
+## 9. Update (Aug 12, evening): the bridge is built and verified
+
+The "concrete next step" of §8 is done: `Zeta23Bridge/` (this repository) now contains **ten kernel-checked theorems** against `zeta-23-lean` v1.0, all auditing to `[propext, Classical.choice, Quot.sound]`, no `sorry`:
+
+- **Layers 1–3** (commits `6c37bcc`): `bivector_commute` (Vanishing Commutator vs Mathlib's `CliffordAlgebra`, any signature), `bivector_sq_neg_one`/`bivector_sq_one` (rotor vs boost), `posIndex_hypBlock`/`negIndex_hypBlock` (the off-line-pair block has signature (1,1)), `strut_hyperbolic_shadow_bound` (n₊ ≤ s + p), `shadow_posIndex_le` (inertia monotone under shadows).
+- **Layer 4** (`40f6033`): `EulerStiffness` — the Euler product's quantitative shadow as a Prop-structure (prime-power support, log-size, Mertens energy, Chebyshev) — with the ζ instance `eulerStiffness_vonMangoldt` *proved* from Mathlib + `Zeta23.Cheb`.
+- **Layer 5** (`6118c2b`): the exact Davenport–Heilbronn negative control. The defect identity `Λ_f(6) = (c(6) − c(2)c(3))·log 6` (the n = 6 log-derivative coefficient **is** the multiplicativity defect); for the D-H pattern the defect is `1 + κ²` — a sum of squares, positive for *every real κ*, no numerics — hence `dh_not_eulerStiffness`. The ζ contrast `zeta_logDerivAt6` (same recursion, zero defect, Λ(6) = 0) closes the pair. The B.8 harness is now machine-checked on both sides, and Grade Orthogonality (Thm 5.3 of the Sieve paper) acquires its converse weapon: *whenever composite generation fails, the failure is forced into the stiffness function at exactly that composite.*
+
+## 10. What the dictionary still does not capture: the fractal is not the function
+
+A critique from the author (McSheery, Aug 12) that this paper should record rather than deflect: everything formalized above — `EulerStiffness` included — is the **operational trace** of the Euler product, not the object. The four fields of `EulerStiffness` are measurements: a support pattern, a growth bound, two asymptotic budgets. But *Euler's intuition is not the list of Euler's provable consequences*: the intuition is the generative act — the integers **are** the product lattice of the primes; the sponge **is** a geometric object, whose zero volume, whose dimension 1/2, whose outwardness are intrinsic properties of a *construction*, not summary statistics of a *series*. A fractal is defined by its generating process; a function by its values. `∑ p^{−2σ}` is the measurement of the sponge, not the sponge. Nothing in this bridge — or in Mathlib — is the sponge.
+
+This is a real gap and not a rhetorical one. The historical pattern for closing such gaps is not "collect more consequences" but **make the ontology native**: build the formal object in which the intuition is a definition rather than a metaphor (schemes did this for "space = its functions"; nonstandard analysis for infinitesimals; noncommutative geometry for quantum spaces). The test of an ontology is whether nativization yields proofs — or at least proof-shapes — unreachable from the operational trace alone.
+
+Concrete program (the honest continuation of this paper):
+
+1. **Define the sponge as a formal object**, not a series: the filtered system of sieve stages `S_k` (the integer lattice after sieving by the first k primes, each stage adding one orthogonal plane in Cl(k,k)), with its inclusion maps; the sponge is the limit object, carrying (a) the counting measure trace and (b) the J-norm energy functional as *structure*, not as afterthoughts.
+2. **Prove the Mertens–Menger bridge as a statement about the object**: that the volume functional and the energy functional on the sponge are related by `Q(1/2) = −log(vol)` — currently two series identities; natively, one isomorphism.
+3. **The native test**: re-derive one known zero-side statement *inside* the sponge frame without translating back to Dirichlet series at any step. If the frame is right, something — plausibly the bandwidth cap `d = λN` of §3, which is a dimension count — should become *definitional* rather than technical.
+4. **Frame-leakage review**: every native derivation gets an adversarial pass asking only one question — *where did a Dirichlet series smuggle back in?* — with Davenport–Heilbronn as the standing control (its sponge, if one tries to build it, must fail to close at the 6-cell; Layer 5 is the algebraic shadow of that failure).
+
+Until step 3 produces something, the fractal-object view remains a promissory note and this paper's dictionary remains what it honestly says it is: a translation of a theorem that was found, and can be fully stated, in the function frame.
+
+---
+
 ## References
 
 - **[Z23]** Claude (Anthropic), *More than two thirds of the zeros of the Riemann zeta function lie on the critical line*, Aug 10 2026. PDF: `www-cdn.anthropic.com/564f962e60643842f5fcb4a17c9dbc8f608f1c37.pdf`; Lean: `github.com/anthropics/zeta-23-lean`; provenance appendix and transcripts linked from the Anthropic announcement.
