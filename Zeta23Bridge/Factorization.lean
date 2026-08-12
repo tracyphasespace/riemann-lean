@@ -26,6 +26,7 @@ interface-`f`, and Davenport–Heilbronn has no interface-`f`
 (`dh_not_eulerStiffness`), so nothing here applies to it.
 -/
 import Zeta23Bridge
+import SpongeStage
 
 noncomputable section
 
@@ -804,7 +805,33 @@ theorem masked_twist (hf : EulerStiffness f) (u : ℕ → ℂ)
       simpa using hf.nonneg n
     · rw [h, one_mul]
 
+/-! ### F3b-instance, first brick: the geometric tail
+
+The bad-prime energy bound reduces per prime to a partial geometric sum;
+this lemma supplies it, reusing the sieve/tower telescope
+(`rotor_telescope` in ℝ): Σ_{k=1..K} r^k ≤ r/(1−r) for 0 ≤ r < 1. -/
+theorem geom_tail_le {r : ℝ} (h0 : 0 ≤ r) (h1 : r < 1) (K : ℕ) :
+    ∑ k ∈ Icc 1 K, r ^ k ≤ r / (1 - r) := by
+  have h1r : (0 : ℝ) < 1 - r := by linarith
+  have htel := Stage3.rotor_telescope r (K + 1)
+  have hsum : ∑ k ∈ range (K + 1), r ^ k = (1 - r ^ (K + 1)) / (1 - r) := by
+    field_simp
+    linarith [htel]
+  have hIcc : ∑ k ∈ Icc 1 K, r ^ k = (∑ k ∈ range (K + 1), r ^ k) - 1 := by
+    rw [Finset.range_eq_Ico,
+      show Finset.Ico 0 (K + 1) = Finset.Icc 0 K from rfl]
+    rw [Finset.Icc_eq_cons_Ioc (Nat.zero_le K), Finset.sum_cons]
+    rw [show Finset.Ioc 0 K = Finset.Icc 1 K from rfl]
+    ring_nf
+  rw [hIcc, hsum]
+  have hpow : (0 : ℝ) ≤ r ^ (K + 1) := pow_nonneg h0 _
+  have heq : (1 - r ^ (K + 1)) / (1 - r) - 1 = (r - r ^ (K + 1)) / (1 - r) := by
+    field_simp
+    ring
+  rw [heq, div_le_div_iff_of_pos_right h1r]
+  linarith
 end Factorization
+
 
 #print axioms Factorization.sum_sq_le
 #print axioms Factorization.sum_div_sqrt_sq_le
@@ -833,3 +860,4 @@ end Factorization
 #print axioms Factorization.EulerStiffnessC.apply_six
 #print axioms Factorization.defect_stability
 #print axioms Factorization.masked_twist
+#print axioms Factorization.geom_tail_le
