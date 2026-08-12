@@ -42,6 +42,10 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecificLimits.Normed
 
 noncomputable section
 
@@ -224,3 +228,102 @@ end Sponge
 #print axioms Sponge.density_shadow
 #print axioms Sponge.volume_shadow
 #print axioms Sponge.parity_projector
+
+/-! ## Stage 2 (tagged for later): the energy variable and the shifts
+
+The energy variable `Q = r²` (the quadratic form, the native coordinate of a
+Clifford world) and the log-linearized shifts. Style-law holds: the `2` of
+the descent appears in lemmas as the step size and the chain factor; the
+`1/2` of `d/dQ = (1/2r)·d/dr` is never written — we state the relation
+multiplicatively. Deferred to Stage 2.5: the Dirac square root (`bivector_sq`
+in `Zeta23Bridge.lean` is its algebraic seed), `Γ(s/2)` as the radial
+measure, theta weight 1/2. -/
+
+namespace Stage2
+
+open Sponge
+
+/-! ### The energy variable: descent by two (Laplace) -/
+
+/-- **Descent by two**: the second derivative — the 1-D Laplacian — lowers
+the degree of a homogeneous profile by exactly 2 (sphere to circle). The
+step size `2` appears here, in a lemma, as the count of applications. -/
+theorem descent_by_two (n : ℕ) (x : ℝ) :
+    deriv (deriv (fun y : ℝ => y ^ (n + 2))) x = (n + 2) * (n + 1) * x ^ n := by
+  have h1 : deriv (fun y : ℝ => y ^ (n + 2)) = fun y : ℝ => ((n : ℝ) + 2) * y ^ (n + 1) := by
+    funext y
+    rw [deriv_pow_field]
+    push_cast [Nat.add_sub_cancel]
+    ring
+  rw [h1, deriv_const_mul _ (differentiableAt_pow _), deriv_pow_field]
+  have h2 : n + 1 - 1 = n := by omega
+  rw [h2]
+  push_cast
+  ring
+
+/-- **The half-step chain relation**: differentiation in the radial variable
+is `2r` times differentiation in the energy variable, stated multiplicatively
+— the `1/2` of `d/dQ = (1/2r)·d/dr` never appears. Energy profiles of degree
+`m+1` in `Q` are radial profiles of degree `2(m+1)` in `r`; one radial
+derivative carries the factor `2r` and one energy-degree step. -/
+theorem half_step (m : ℕ) (r : ℝ) :
+    deriv (fun x : ℝ => (x ^ 2) ^ (m + 1)) r = 2 * r * ((m + 1) * (r ^ 2) ^ m) := by
+  have h : (fun x : ℝ => (x ^ 2) ^ (m + 1)) = fun x => x ^ (2 * (m + 1)) := by
+    funext x
+    rw [← pow_mul]
+  rw [h, deriv_pow_field]
+  have h1 : 2 * (m + 1) - 1 = 2 * m + 1 := by omega
+  rw [h1, show ((r : ℝ) ^ 2) ^ m = r ^ (2 * m) from (pow_mul r 2 m).symm]
+  push_cast
+  ring
+
+/-! ### The shifts: the embedding linearized (the Zeta Motor's rails) -/
+
+/-- Translation of a profile: the shift operator `T_a`. -/
+def shift (a : ℝ) (f : ℝ → ℝ) : ℝ → ℝ := fun x => f (x - a)
+
+/-- Shifts compose additively: the shift family is a one-parameter group. -/
+theorem shift_shift (a b : ℝ) (f : ℝ → ℝ) :
+    shift a (shift b f) = shift (a + b) f := by
+  funext x
+  simp [shift, sub_sub]
+
+/-- The shift family commutes — the operator form of `embed_comm`. -/
+theorem shift_comm (a b : ℝ) (f : ℝ → ℝ) :
+    shift a (shift b f) = shift b (shift a f) := by
+  rw [shift_shift, shift_shift, add_comm]
+
+/-- **The log-linearization**: under `log`, the self-embedding becomes a
+translation — the doll factory becomes a rail. This is the bridge from the
+sponge's multiplicative strata to the shift operators of the explicit
+formula (`T_{log p}` in `K(s,B)`; the Gabor rails of [Z23]). -/
+theorem log_linearizes {p n : ℕ} (hp : p ≠ 0) (hn : n ≠ 0) :
+    Real.log (embed p n) = Real.log p + Real.log n := by
+  unfold Sponge.embed
+  push_cast
+  exact Real.log_mul (Nat.cast_ne_zero.mpr hp) (Nat.cast_ne_zero.mpr hn)
+
+/-! ### The resolvent: the Euler factor typed (Euler, Neumann) -/
+
+/-- **Sieve × tower = identity**: the complementary sieve factor `(1 − x)`
+annihilates the full tower sum to `1` — the Euler factor
+`(1 − p^{−s})^{−1}` is the *resolvent* of the descent, its geometric series
+the tower's telescope. Stated multiplicatively: no inverse, no fraction;
+`x` is the abstract descent weight. -/
+theorem sieve_times_tower {x : ℝ} (h : |x| < 1) :
+    (1 - x) * ∑' k : ℕ, x ^ k = 1 := by
+  have hx : ‖x‖ < 1 := by simpa [Real.norm_eq_abs] using h
+  rw [tsum_geometric_of_norm_lt_one hx]
+  have hne : (1 : ℝ) - x ≠ 0 := by
+    intro h0
+    rw [sub_eq_zero] at h0
+    rw [← h0] at h
+    norm_num at h
+  exact mul_inv_cancel₀ hne
+
+end Stage2
+
+#print axioms Stage2.descent_by_two
+#print axioms Stage2.half_step
+#print axioms Stage2.log_linearizes
+#print axioms Stage2.sieve_times_tower
