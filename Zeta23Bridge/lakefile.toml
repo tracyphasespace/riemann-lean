@@ -1,0 +1,14 @@
+name = "Zeta23Bridge"
+version = "0.1.0"
+defaultTargets = ["Zeta23Bridge"]
+
+[leanOptions]
+pp.unicode.fun = true
+
+[[require]]
+name = "Zeta23"
+git = "https://github.com/anthropics/zeta-23-lean"
+rev = "v1.0"
+
+[[lean_lib]]
+name = "Zeta23Bridge"
